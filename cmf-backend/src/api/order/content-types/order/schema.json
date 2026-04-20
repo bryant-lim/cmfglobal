@@ -1,0 +1,119 @@
+{
+  "kind": "collectionType",
+  "collectionName": "orders",
+  "info": {
+    "singularName": "order",
+    "pluralName": "orders",
+    "displayName": "Order",
+    "description": "Financial transactions and purchase records for memberships and tickets."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "refNo": {
+      "type": "string",
+      "unique": true,
+      "required": false
+    },
+    "amountPaid": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "enumeration",
+      "enum": ["USD", "CNY"],
+      "default": "USD"
+    },
+    "orderStatus": {
+      "type": "enumeration",
+      "enum": ["pending", "paid", "cancelled"],
+      "default": "pending"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["membership", "ticket"]
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "attendees": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::attendee.attendee",
+      "mappedBy": "order"
+    },
+    "paymentDetails": {
+      "type": "json"
+    },
+    "buyerFirstName": {
+      "type": "string",
+      "required": true
+    },
+    "buyerLastName": {
+      "type": "string",
+      "required": true
+    },
+    "buyerChineseName": {
+      "type": "string"
+    },
+    "tShirtSize": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "buyerEmail": {
+      "type": "email",
+      "required": true
+    },
+    "buyerPhone": {
+      "type": "string",
+      "required": true
+    },
+    "buyerBillingAddress": {
+      "type": "json",
+      "required": true
+    },
+    "buyerCompanyName": {
+      "type": "string"
+    },
+    "membership_type": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::membership-type.membership-type",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "enrollmentData": {
+      "type": "json"
+    },
+    "paymentRequestId": {
+      "type": "string"
+    },
+    "validUntil": {
+      "type": "date"
+    },
+    "adminTaxAmount": {
+      "type": "decimal"
+    },
+    "receiptUrl": {
+      "type": "string"
+    }
+  }
+}

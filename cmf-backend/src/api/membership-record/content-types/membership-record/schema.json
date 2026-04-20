@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "membership_records",
+  "info": {
+    "singularName": "membership-record",
+    "pluralName": "membership-records",
+    "displayName": "Membership Record",
+    "description": "Stores individual membership instances for users"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "membershipCode": {
+      "type": "string"
+    },
+    "validUntil": {
+      "type": "date"
+    },
+    "membershipStatus": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "expired",
+        "pending"
+      ],
+      "default": "active"
+    },
+    "membership_type": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::membership-type.membership-type",
+      "inversedBy": "membership_records"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "profile": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::profile.profile",
+      "inversedBy": "wallet_records"
+    },
+    "order": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::order.order"
+    }
+  }
+}

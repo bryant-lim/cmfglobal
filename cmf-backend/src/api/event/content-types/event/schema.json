@@ -1,0 +1,66 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "singularName": "event",
+    "pluralName": "events",
+    "displayName": "Event",
+    "description": "Association events and ticketing details. Universal non-localized version."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "titleZh": {
+      "type": "string"
+    },
+    "description": {
+      "type": "richtext"
+    },
+    "descriptionZh": {
+      "type": "richtext"
+    },
+    "startDateTime": {
+      "type": "datetime",
+      "required": true
+    },
+    "endDateTime": {
+      "type": "datetime",
+      "required": true
+    },
+    "location": {
+      "type": "string",
+      "required": true
+    },
+    "locationZh": {
+      "type": "string"
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "tiers": {
+      "type": "component",
+      "repeatable": true,
+      "component": "events.price-tier"
+    },
+    "attendees": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::attendee.attendee",
+      "mappedBy": "event"
+    }
+  }
+}

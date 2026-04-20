@@ -1,0 +1,12 @@
+{
+  "attributes": {
+    "chineseName": { "type": "string" },
+    "phone": { "type": "string", "unique": true },
+    "passportNo": { "type": "string", "unique": true },
+    "companyName": { "type": "string" },
+    "designation": { "type": "string" },
+    "gender": { "type": "enumeration", "enum": ["male", "female", "other"] },
+    "billingAddress": { "type": "json" },
+    "memberSerialCode": { "type": "string", "unique": true }
+  }
+}

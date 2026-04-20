@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "membership_categories",
+  "info": {
+    "singularName": "membership-category",
+    "pluralName": "membership-categories",
+    "displayName": "Membership Category"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    }
+  }
+}

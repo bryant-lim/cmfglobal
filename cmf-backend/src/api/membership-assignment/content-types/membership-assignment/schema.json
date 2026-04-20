@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "membership_assignments",
+  "info": {
+    "singularName": "membership-assignment",
+    "pluralName": "membership-assignments",
+    "displayName": "Membership Assignment"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "member": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "membershipType": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::membership-type.membership-type"
+    },
+    "assignmentCode": {
+      "type": "string",
+      "unique": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "expired", "pending"],
+      "default": "pending"
+    },
+    "startDate": { "type": "date" },
+    "endDate": { "type": "date" },
+    "incomeSlip": { "type": "media" },
+    "portraitPhoto": { "type": "media" },
+    "grossIncome": { "type": "string" },
+    "referenceNo": { "type": "string", "unique": true },
+    "legacyId": {
+      "type": "string"
+    },
+    "migrationNotes": {
+      "type": "text"
+    }
+  }
+}

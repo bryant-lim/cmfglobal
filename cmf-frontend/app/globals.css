@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans SC", "Noto Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-cmf-red: #E60012;
+  --color-cmf-red-dark: #B3000E;
+  --color-cmf-white: #FFFFFF;
+  --color-cmf-offwhite: #F8F9FA;
+  --color-cmf-black: #1A1A1A;
+}
+
+:root {
+  --primary: var(--color-cmf-red);
+  --primary-foreground: var(--color-cmf-white);
+  --background: var(--color-cmf-white);
+  --foreground: var(--color-cmf-black);
+  
+  --card: var(--color-cmf-white);
+  --card-foreground: var(--color-cmf-black);
+  
+  --muted: var(--color-cmf-offwhite);
+  --muted-foreground: #666666;
+
+  --border: #E5E5E5;
+  --input: #E5E5E5;
+  --ring: var(--color-cmf-red);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--color-cmf-red-dark)] transition-colors px-6 py-2 rounded-lg font-medium;
+  }
+  
+  .card-premium {
+    @apply bg-white border border-[var(--border)] rounded-xl shadow-sm hover:shadow-md transition-shadow p-6;
+  }
+}

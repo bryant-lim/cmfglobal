@@ -1,0 +1,21 @@
+{
+  "kind": "singleType",
+  "collectionName": "payment_settings",
+  "info": {
+    "singularName": "payment-setting",
+    "pluralName": "payment-settings",
+    "displayName": "Payment Setting",
+    "description": "Global payment and tax settings"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "adminTaxPercentage": {
+      "type": "float",
+      "default": 0,
+      "min": 0
+    }
+  }
+}

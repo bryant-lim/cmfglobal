@@ -1,0 +1,70 @@
+{
+  "kind": "collectionType",
+  "collectionName": "membership_types",
+  "info": {
+    "singularName": "membership-type",
+    "pluralName": "membership-types", 
+    "displayName": "Membership Type",
+    "description": "Types of memberships available. Universal version."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::membership-category.membership-category"
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "nameZh": {
+      "type": "string"
+    },
+    "priceUsd": {
+      "type": "decimal",
+      "required": true
+    },
+    "priceCny": {
+      "type": "decimal",
+      "required": true
+    },
+    "validityMonths": {
+      "type": "integer",
+      "required": true,
+      "default": 12
+    },
+    "description": {
+      "type": "text"
+    },
+    "descriptionZh": {
+      "type": "text"
+    },
+    "features": {
+      "type": "text"
+    },
+    "featuresZh": {
+      "type": "text"
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "membership_records": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::membership-record.membership-record",
+      "mappedBy": "membership_type"
+    }
+  }
+}
