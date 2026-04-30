@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, Loader2, UserCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, UserCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const t = useTranslations('Forms');
   const commonT = useTranslations('Homepage'); // Using Homepage for welcome text if applicable or just generic
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -53,14 +54,23 @@ export default function LoginPage() {
         const diagData = await diagRes.json();
         
         if (diagData.jwt) {
-          data = { jwt: diagData.jwt };
+          data = { 
+            jwt: diagData.jwt, 
+            user: { mustChangePassword: diagData.mustChangePassword } 
+          };
         }
       }
 
       if (data.jwt) {
         localStorage.setItem('cmf_token', data.jwt);
         document.cookie = `cmf_token=${data.jwt}; path=/; max-age=86400; SameSite=Strict`;
-        router.push(`/${locale}/dashboard`);
+        
+        // 🔐 First-time login enforcement
+        if (data.user?.mustChangePassword || password === 'CMFGC@2026!@') {
+          router.push(`/${locale}/dashboard/profile?forceChange=true`);
+        } else {
+          router.push(`/${locale}/dashboard`);
+        }
       } else {
         setError(t('auth.invalidCredentials'));
       }
@@ -88,7 +98,6 @@ export default function LoginPage() {
              )}
           </div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('auth.welcomeBack')}<span className="text-[#E63946]">.</span></h1>
-          <p className="text-gray-400 font-medium mt-2">{t('auth.portalAccess')}</p>
         </div>
 
         <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_40px_80px_rgba(0,0,0,0.06)] border border-gray-100 backdrop-blur-sm animate-in slide-in-from-bottom-6 duration-1000">
@@ -120,13 +129,20 @@ export default function LoginPage() {
                   <Lock className="h-5 w-5 text-gray-300" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-11 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#E63946] focus:ring-4 focus:ring-red-50 outline-none transition-all duration-300 text-gray-900 font-bold placeholder:text-gray-300"
+                  className="block w-full pl-11 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#E63946] focus:ring-4 focus:ring-red-50 outline-none transition-all duration-300 text-gray-900 font-bold placeholder:text-gray-300"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-gray-500 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 

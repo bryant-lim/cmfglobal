@@ -8,13 +8,15 @@
     "cancel": "取消",
     "confirm": "确认",
     "back": "返回",
-    "next": "下一步"
+    "next": "下一步",
+    "privacyPolicy": "隐私政策",
+    "refundPolicy": "退款政策"
   },
   "Navigation": {
     "home": "首页",
-    "membership": "会员计划",
+    "membership": "奖项",
     "tickets": "活动与购票",
-    "directory": "会员名录",
+    "directory": "CMF 社区",
     "dashboard": "控制面板",
     "login": "登录",
     "logout": "注销",
@@ -25,7 +27,7 @@
     "badgeSub": "连接顶尖保险从业者",
     "heroTitle": "赋能新一代保险领袖",
     "heroSubtitle": "加入全球最负盛名的保险专业人士协会。",
-    "ctaJoin": "申请会员",
+    "ctaJoin": "申请奖项",
     "ctaEvents": "查看近期活动",
     "statCountries": "5 个国家",
     "statCountriesDesc": "连接来自世界各地的精英代理人。",
@@ -42,12 +44,14 @@
       "loginTitle": "登录您的账户",
       "loginSub": "访问您的CMF仪表板和会员权益。",
       "welcomeBack": "欢迎回来",
-      "portalAccess": "需进行门户身份验证方可继续",
-      "loginAction": "登录门户",
+      "loginAction": "登录",
       "noAccount": "还没有账户？",
-      "applyNow": "申请加入会员",
+      "applyNow": "申请加入奖项",
       "invalidCredentials": "邮箱或密码错误",
-      "connectionError": "连接失败，请稍后重试。"
+      "connectionError": "连接失败，请稍后重试。",
+      "securityUpdateTitle": "需进行安全更新",
+      "securityUpdateSub": "为了保护您的账户，您必须在访问CMF会员门户之前更新您的临时密码。",
+      "passwordMismatch": "密码不匹配"
     },
     "labels": {
       "firstName": "名",
@@ -70,7 +74,9 @@
       "uploadIncomeSlip": "上传收入证明 (可选)",
       "currentPassword": "当前密码",
       "newPassword": "新密码",
-      "confirmPassword": "确认新密码"
+      "confirmPassword": "确认新密码",
+      "pastYearIncome": "去年总收入 (USD)",
+      "billingCompanyName": "公司名称 (可选)"
     },
     "placeholders": {
       "firstName": "请输入名字",
@@ -84,11 +90,11 @@
       "idNo": "请输入身份证或护照号"
     },
     "membership": {
-      "enrollTitle": "会员入会申请",
+      "enrollTitle": "奖项申请",
       "step": "第 {current} 步，共 {total} 步",
       "selectType": "选择会员类型",
       "profileInfo": "个人资料",
-      "payment": "安全支付",
+      "payment": "支付摘要",
       "confirmRecord": "确认资料"
     },
     "tickets": {
@@ -100,12 +106,14 @@
       "ticketPrice": "门票价格",
       "adminTax": "行政税费",
       "totalPayable": "实付金额",
-      "proceedPayment": "前往支付"
+      "proceedPayment": "前往支付",
+      "promotionEnded": "促销已于 {date} 结束"
     },
     "profile": {
       "title": "个人资料",
-      "personalId": "身份信息",
+      "personalId": "个人详情",
       "professional": "职业详情",
+      "passwordDetails": "密码详情",
       "billing": "账单信息",
       "saveChanges": "保存更改",
       "memberId": "会员编号",
@@ -119,15 +127,15 @@
     "dashboard": {
       "welcome": "您好",
       "member": "会员",
-      "addNew": "新增会员计划",
-      "noActive": "您的钱包内没有有效的会员卡。",
+      "addNew": "新增奖项计划",
+      "noActive": "没有有效的奖项",
       "renewNow": "立即续费",
       "statusActive": "有效",
       "statusPending": "待定",
       "validTill": "有效期至",
       "hide": "隐藏",
       "view": "查看",
-      "expiredMemberships": "已过期会员卡",
+      "expiredMemberships": "已过期奖项卡",
       "expiredOn": "过期于",
       "title": "会员控制面板",
       "myTickets": "我的门票",
@@ -138,7 +146,7 @@
       "noTickets": "未找到有效门票",
       "browseEvents": "浏览活动",
       "noOrders": "暂无订单",
-      "joinMembership": "加入会员",
+      "joinMembership": "加入奖项",
       "description": "描述",
       "status": "状态",
       "amount": "金额",
@@ -152,15 +160,18 @@
       "noOrdersDesc": "您还没有任何购买记录。您的会员资格和活动门票发票将显示在这里。",
       "showing": "显示",
       "transactions": "条交易记录",
-      "directoryTitle": "CMF 全球社区",
-      "searchDirectory": "通过姓名或会员号搜索...",
-      "filterByType": "通过类型筛选",
+      "directoryTitle": "CMF 社区",
+      "searchDirectory": "按姓名、ID 或中文姓名搜索...",
+      "filterByType": "按奖项筛选",
+      "loadMore": "加载更多成员",
+      "loading": "加载中...",
       "searchTypes": "搜索类型...",
       "noTypesFound": "未找到相关类型",
       "noMembersFound": "未找到会员",
       "noMembersDesc": "请尝试调整您的搜索词或筛选条件。",
       "allTypes": "全部",
-      "loadingDirectory": "正在访问名录..."
+      "loadingDirectory": "正在访问名录...",
+      "membershipHistory": "奖项历史"
     }
   }
 }

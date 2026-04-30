@@ -209,10 +209,7 @@ export default factories.createCoreService('api::order.order', ({ strapi }) => (
            .text('CMF GLOBAL', 50, 50);
       }
       
-      doc.fontSize(10)
-         .fillColor('#666666')
-         .font('Helvetica')
-         .text('INSURANCE ELITE ASSOCIATION', 50, 105);
+      // Branding text removed per user request
 
       doc.fillColor(primaryColor)
          .fontSize(20)
@@ -233,11 +230,11 @@ export default factories.createCoreService('api::order.order', ({ strapi }) => (
 
       doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(11).text('FROM:', 50, startY);
       doc.fillColor('#000000').font('Helvetica').fontSize(10);
-      doc.text('CMF Global Association', 50, startY + 20);
-      doc.text('123 Associate Plaza, Suite 800', 50, startY + 35);
-      doc.text('Kuala Lumpur, 50450, Malaysia', 50, startY + 50);
-      doc.text('Email: contact@cmfglobal.com', 50, startY + 65);
-      doc.text('Phone: +60 3-1234 5678', 50, startY + 80);
+      doc.text('CMF Global Resources', 50, startY + 20);
+      doc.text('UNIT E2-1-13 JALAN 1/152', 50, startY + 35);
+      doc.text('TAMAN OUG PARKLANE', 50, startY + 50);
+      doc.text('58200 KUALA LUMPUR W.P. KUALA LUMPUR', 50, startY + 65);
+      doc.text('Email: general@cmfglobalcentre.com', 50, startY + 80);
 
       doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(11).text('BILL TO:', 300, startY);
       doc.fillColor('#000000').font('Helvetica').fontSize(10);

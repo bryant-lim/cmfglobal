@@ -3,30 +3,50 @@ export default {
     try {
       const fromEmail = process.env.SMTP_FROM || 'no-reply@creativatestudio.cloud';
       
-      console.log(`✉️ Sending to: ${email} from ${fromEmail}`);
+      console.log(`✉️ Sending Welcome to: ${email} from ${fromEmail}`);
 
       await strapi.plugins['email'].services.email.send({
         to: email,
         from: fromEmail,
-        subject: `Welcome to CMF Global - Your Account Details`,
+        subject: `CMF Global - Membership Application Received`,
         html: `
-          <h1>Welcome to the Club!</h1>
-          <p>Your membership has been successfully activated.</p>
+          <h1>Application Received!</h1>
+          <p>Thank you for applying for a CMF Global membership. Your application is currently <strong>pending approval</strong>.</p>
+          <p>Our team will review your details shortly. In the meantime, you can access your dashboard using the temporary credentials below:</p>
           <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; margin: 20px 0;">
             <p><strong>Login Email:</strong> ${email}</p>
             <p><strong>Temporary Password:</strong> ${tempPassword}</p>
           </div>
+          <p>You will receive another email once your membership has been approved and activated.</p>
         `,
       });
-      console.log('✅ Email SUCCESS');
+      console.log('✅ Welcome Email (Pending) SUCCESS');
     } catch (err: any) {
-      console.error('❌ EMAIL ERROR DETECTED');
-      // If any of these exist, print them
-      if (err.code) console.error('Error Code:', err.code);
-      if (err.command) console.error('SMTP Command:', err.command);
-      if (err.responseCode) console.error('SMTP Response Code:', err.responseCode);
-      if (err.response) console.error('SMTP Full Response:', err.response);
+      console.error('❌ EMAIL ERROR:', err.message);
+    }
+  },
+
+  async sendActivationEmail(email, memberName) {
+    try {
+      const fromEmail = process.env.SMTP_FROM || 'no-reply@creativatestudio.cloud';
       
+      await strapi.plugins['email'].services.email.send({
+        to: email,
+        from: fromEmail,
+        subject: `Congratulations! Your CMF Global Membership is ACTIVE`,
+        html: `
+          <h1>Welcome to the Club, ${memberName}!</h1>
+          <p>We are excited to inform you that your membership application has been <strong>approved and activated</strong>.</p>
+          <p>Your membership validity has started counting from today.</p>
+          <p>You can now log in to your dashboard to view your digital membership card and access exclusive member features.</p>
+          <div style="margin-top: 30px;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3003'}" style="background: #1a1a1a; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Access My Dashboard</a>
+          </div>
+        `,
+      });
+      console.log('✅ Activation Email SUCCESS');
+    } catch (err: any) {
+      console.error('❌ ACTIVATION EMAIL ERROR:', err.message);
     }
   },
 

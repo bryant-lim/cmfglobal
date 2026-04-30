@@ -8,13 +8,15 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "back": "Back",
-    "next": "Next"
+    "next": "Next",
+    "privacyPolicy": "Privacy Policy",
+    "refundPolicy": "Refund Policy"
   },
   "Navigation": {
     "home": "Home",
-    "membership": "Membership",
+    "membership": "Awards",
     "tickets": "Events & Tickets",
-    "directory": "Member Directory",
+    "directory": "CMF Community",
     "dashboard": "Dashboard",
     "login": "Login",
     "logout": "Logout",
@@ -25,7 +27,7 @@
     "badgeSub": "Connecting Elite Insurance Agents",
     "heroTitle": "Empowering the Next Generation of Insurance Leaders",
     "heroSubtitle": "Join the most prestigious association for insurance professionals worldwide.",
-    "ctaJoin": "Apply for Membership",
+    "ctaJoin": "Apply for Awards",
     "ctaEvents": "View Upcoming Events",
     "statCountries": "5 Countries",
     "statCountriesDesc": "Connecting elite agents from around the world.",
@@ -42,12 +44,14 @@
       "loginTitle": "Login to Your Account",
       "loginSub": "Access your CMF dashboard and member benefits.",
       "welcomeBack": "Welcome Back",
-      "portalAccess": "Portal authentication required to proceed",
-      "loginAction": "Sign In to Portal",
+      "loginAction": "Sign In",
       "noAccount": "Don't have an account?",
-      "applyNow": "Apply for Membership",
+      "applyNow": "Apply for Awards",
       "invalidCredentials": "Invalid email or password",
-      "connectionError": "Connection failed. Please try again."
+      "connectionError": "Connection failed. Please try again.",
+      "securityUpdateTitle": "Security Update Required",
+      "securityUpdateSub": "To protect your account, you must update your temporary password before accessing the CMF Member Portal.",
+      "passwordMismatch": "Passwords do not match"
     },
     "labels": {
       "firstName": "First Name",
@@ -70,7 +74,9 @@
       "uploadIncomeSlip": "Upload Income Slip (Optional)",
       "currentPassword": "Current Password",
       "newPassword": "New Password",
-      "confirmPassword": "Confirm New Password"
+      "confirmPassword": "Confirm New Password",
+      "pastYearIncome": "Past Year Income (USD)",
+      "billingCompanyName": "Company Name (Optional)"
     },
     "placeholders": {
       "firstName": "Enter first name",
@@ -84,11 +90,11 @@
       "idNo": "Enter ID or Passport Number"
     },
     "membership": {
-      "enrollTitle": "Membership Enrollment",
+      "enrollTitle": "Award Application",
       "step": "Step {current} of {total}",
       "selectType": "Select Membership Type",
       "profileInfo": "Personal Profile",
-      "payment": "Secure Payment",
+      "payment": "Payment Summary",
       "confirmRecord": "Confirm Your Details"
     },
     "tickets": {
@@ -100,12 +106,14 @@
       "ticketPrice": "Ticket Price",
       "adminTax": "Admin Tax",
       "totalPayable": "Total Payable",
-      "proceedPayment": "Proceed to Payment"
+      "proceedPayment": "Proceed to Payment",
+      "promotionEnded": "Promotion ended on {date}"
     },
     "profile": {
       "title": "My Profile",
-      "personalId": "Personal Identity",
+      "personalId": "Personal Details",
       "professional": "Professional Details",
+      "passwordDetails": "Password Details",
       "billing": "Billing Information",
       "saveChanges": "Save Changes",
       "memberId": "Member ID",
@@ -119,15 +127,15 @@
     "dashboard": {
       "welcome": "Hi",
       "member": "Member",
-      "addNew": "Add New Membership",
-      "noActive": "No active memberships found in your wallet.",
+      "addNew": "Add New Awards",
+      "noActive": "No active awards",
       "renewNow": "Renew Now",
       "statusActive": "Active",
       "statusPending": "Pending",
       "validTill": "Valid till",
       "hide": "Hide",
       "view": "View",
-      "expiredMemberships": "Expired Memberships",
+      "expiredMemberships": "Expired Awards",
       "expiredOn": "Expired On",
       "title": "Member Dashboard",
       "myTickets": "My Tickets",
@@ -138,7 +146,7 @@
       "noTickets": "No active tickets found",
       "browseEvents": "Browse Events",
       "noOrders": "No orders yet",
-      "joinMembership": "Join Membership",
+      "joinMembership": "Join Awards",
       "description": "Description",
       "status": "Status",
       "amount": "Amount",
@@ -152,15 +160,18 @@
       "noOrdersDesc": "You haven't made any purchases yet. Your membership and event ticket invoices will appear here.",
       "showing": "Showing",
       "transactions": "transactions",
-      "directoryTitle": "CMF Global Community",
+      "directoryTitle": "CMF Community",
       "searchDirectory": "Search by name or membership ID...",
-      "filterByType": "Filter by Type",
+      "filterByType": "Filter by Award",
+      "loadMore": "Load More Members",
+      "loading": "Loading...",
       "searchTypes": "Search types...",
       "noTypesFound": "No types found",
       "noMembersFound": "No members found",
       "noMembersDesc": "Try adjusting your search or filters.",
       "allTypes": "All",
-      "loadingDirectory": "Accessing Directory..."
+      "loadingDirectory": "Accessing Directory...",
+      "membershipHistory": "Awards History"
     }
   }
 }

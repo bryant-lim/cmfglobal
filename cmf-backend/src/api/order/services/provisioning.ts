@@ -7,7 +7,7 @@ export default ({ strapi }) => ({
       
       const results: any = await strapi.documents('api::order.order').findMany({
         filters: { id: orderId },
-        populate: ['membership_type', 'event']
+        populate: ['membership_type', 'event', 'user']
       });
 
       const orderData = results[0];
@@ -21,16 +21,11 @@ export default ({ strapi }) => ({
 
       console.log(`📦 Order Type Detected: "${orderData.type}" for Order ID: ${orderId}`);
 
-      const expiryDate = new Date();
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-      const validUntilStr = expiryDate.toISOString().split('T')[0];
-
-      // 🔒 LOCK THE ORDER: Mark as paid IMMEDIATELY to prevent other race threads
+      // 🔒 LOCK THE ORDER: Mark as paid IMMEDIATELY
       await strapi.documents('api::order.order').update({
         documentId: orderData.documentId,
         data: {
           orderStatus: 'paid',
-          validUntil: validUntilStr
         }
       });
 
@@ -69,16 +64,26 @@ export default ({ strapi }) => ({
               email: cleanEmail,
               password: hashedPassword,
               confirmed: true,
-              role: roleId
+              role: roleId,
+              mustChangePassword: true
             }
           });
           console.log('👤 New User Provisioned');
         } else {
           await strapi.db.query('plugin::users-permissions.user').update({
             where: { id: user.id },
-            data: { password: hashedPassword, role: roleId, confirmed: true }
+            data: { password: hashedPassword, role: roleId, confirmed: true, mustChangePassword: true }
           });
           console.log('✅ Existing User Credentials Updated');
+        }
+
+        // 🟢 FIX: Ensure the Order is linked to this user so it shows in "My Orders"
+        if (user && !orderData.user) {
+          await strapi.documents('api::order.order').update({
+            documentId: orderData.documentId,
+            data: { user: user.id } as any
+          });
+          console.log('🔗 Order Linked to User for Dashboard Visibility');
         }
 
         if (user) {
@@ -136,6 +141,7 @@ export default ({ strapi }) => ({
 
           // 3. Handle Membership Record (The "Pass")
           let memberIdStr = profile.memberId;
+          let isRenewal = !!memberIdStr; // If they already have a memberId, it's a renewal/returning member
 
           if (!memberIdStr) {
             console.log('🆔 No existing Member ID on profile. Generating new identity...');
@@ -164,14 +170,38 @@ export default ({ strapi }) => ({
             console.log('✅ Reusing Existing Persistent Identity:', memberIdStr);
           }
 
+          // Calculate dates for renewals
+          let validFrom = null;
+          let validUntil = null;
+          let status = 'pending_approval';
+
+          if (isRenewal) {
+            console.log('♻️ Auto-activating Renewal...');
+            const now = new Date();
+            validFrom = now.toISOString().split('T')[0];
+            
+            const validityMonths = orderData.membership_type?.validityMonths || 12;
+            const expiryDate = new Date(now);
+            expiryDate.setMonth(expiryDate.getMonth() + validityMonths);
+            validUntil = expiryDate.toISOString().split('T')[0];
+            status = 'active';
+
+            // Also update the order for record keeping
+            await strapi.documents('api::order.order').update({
+              documentId: orderData.documentId,
+              data: { validFrom, validUntil }
+            });
+          }
+
           // Generate the Card Pass - NOW LINKED TO THE ORDER ID
           const membershipTypeDocId = orderData.membership_type?.documentId;
           await strapi.documents('api::membership-record.membership-record').create({
             data: {
               name: orderData.membership_type?.name,
               membershipCode: memberIdStr,
-              validUntil: validUntilStr,
-              membershipStatus: 'active',
+              validFrom: validFrom,
+              validUntil: validUntil,
+              membershipStatus: status,
               membership_type: membershipTypeDocId,
               user: user.id,
               profile: profile.id,

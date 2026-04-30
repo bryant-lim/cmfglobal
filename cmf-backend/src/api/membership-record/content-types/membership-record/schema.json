@@ -21,14 +21,17 @@
     "validUntil": {
       "type": "date"
     },
+    "validFrom": {
+      "type": "date"
+    },
     "membershipStatus": {
       "type": "enumeration",
       "enum": [
         "active",
         "expired",
-        "pending"
+        "pending_approval"
       ],
-      "default": "active"
+      "default": "pending_approval"
     },
     "membership_type": {
       "type": "relation",

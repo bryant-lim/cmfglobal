@@ -131,11 +131,44 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
   async directory(ctx) {
     try {
-      const { locale } = ctx.query as { locale?: string };
-      console.log(`🔍 [DIRECTORY] Fetching members. Requested locale for types: ${locale || 'default'}`);
+      const { locale, page = 1, pageSize = 20, search = '', type = '' } = ctx.query as any;
+      const start = (parseInt(page) - 1) * parseInt(pageSize);
+      const limit = parseInt(pageSize);
+
+      console.log(`🔍 [DIRECTORY] Fetching members. Page: ${page}, Size: ${pageSize}, Search: "${search}", Type: "${type}"`);
       
-      // Use strapi.db.query to bypass Document Service locale filtering
+      const searchFilter: any = {
+        wallet_records: { id: { $notNull: true } }
+      };
+
+      if (search) {
+        searchFilter.$or = [
+          { firstName: { $contains: search } },
+          { lastName: { $contains: search } },
+          { chineseName: { $contains: search } },
+          { memberId: { $contains: search } }
+        ];
+      }
+
+      if (type && type !== 'All Awards' && type !== '所有奖项') {
+        searchFilter.wallet_records = {
+          ...searchFilter.wallet_records,
+          membership_type: {
+             name: type
+          }
+        };
+      }
+
+      // Fetch total count for pagination meta with filter
+      const totalCount = await strapi.db.query('api::profile.profile').count({
+        where: searchFilter
+      });
+
+      // Fetch paginated profiles with filter
       const profiles = await strapi.db.query('api::profile.profile').findMany({
+        where: searchFilter,
+        limit,
+        offset: start,
         populate: {
           portraitPhoto: true,
           wallet_records: {
@@ -143,39 +176,49 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
               membership_type: true
             }
           }
-        }
+        },
+        orderBy: { createdAt: 'desc' }
       });
 
-      console.log(`🔍 [DIRECTORY] Found ${profiles.length} total profiles in DB.`);
-
-      const activeProfiles = (profiles as any[]).filter(p => {
-        const activeRecords = p.wallet_records?.filter((r: any) => r.membershipStatus === 'active');
-        return activeRecords && activeRecords.length > 0;
-      });
+      console.log(`🔍 [DIRECTORY] Found ${profiles.length} profiles for this page.`);
 
       const finalData = [];
-      for (const p of activeProfiles) {
-        const activeRecords = p.wallet_records.filter((r: any) => r.membershipStatus === 'active');
-        const types = [];
-        
-        for (const r of activeRecords) {
+      for (const p of profiles as any[]) {
+        const history = [];
+        for (const r of p.wallet_records || []) {
           if (!r.membership_type) continue;
-          if (!locale) {
-            types.push(r.membership_type.name);
-            continue;
+          
+          let typeName = r.membership_type.name;
+          if (locale) {
+            try {
+              const localizedType = await strapi.documents('api::membership-type.membership-type').findOne({
+                documentId: r.membership_type.documentId,
+                locale: locale
+              });
+              if (localizedType) typeName = localizedType.name;
+            } catch (e) {}
           }
           
-          try {
-            const localizedType = await strapi.documents('api::membership-type.membership-type').findOne({
-              documentId: r.membership_type.documentId,
-              locale: locale
-            });
-            types.push(localizedType?.name || r.membership_type.name);
-          } catch (e) {
-            types.push(r.membership_type.name);
-          }
+          const now = new Date();
+          const validUntil = r.validUntil ? new Date(r.validUntil) : null;
+          const isExpired = validUntil && validUntil < now;
+          const currentStatus = isExpired ? 'expired' : r.membershipStatus;
+          
+          history.push({
+            year: r.validFrom ? new Date(r.validFrom).getFullYear() : (r.validUntil ? new Date(r.validUntil).getFullYear() : 'TBA'),
+            type: typeName,
+            status: currentStatus
+          });
         }
-        
+
+        history.sort((a, b) => (typeof b.year === 'number' && typeof a.year === 'number') ? b.year - a.year : 0);
+
+        let displayTypes = history.filter(h => h.status === 'active').map(h => h.type);
+        if (displayTypes.length === 0 && history.length > 0) {
+          const latestYear = history[0].year;
+          displayTypes = history.filter(h => h.year === latestYear).map(h => h.type);
+        }
+
         finalData.push({
           id: p.id,
           documentId: p.documentId,
@@ -184,12 +227,22 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
           chineseName: p.chineseName,
           memberId: p.memberId,
           portraitPhoto: p.portraitPhoto,
-          membershipTypes: [...new Set(types.filter(Boolean))]
+          membershipTypes: [...new Set(displayTypes)],
+          membershipHistory: history
         });
       }
 
-      console.log(`✅ [DIRECTORY] Returning ${finalData.length} active members.`);
-      return { data: finalData };
+      return { 
+        data: finalData,
+        meta: {
+          pagination: {
+            page: parseInt(page),
+            pageSize: parseInt(pageSize),
+            pageCount: Math.ceil(totalCount / limit),
+            total: totalCount
+          }
+        }
+      };
     } catch (err: any) {
        console.error('❌ [DIRECTORY] Error:', err.message);
        return ctx.internalServerError(err.message);

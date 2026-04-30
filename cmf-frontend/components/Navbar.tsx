@@ -100,7 +100,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-gray-700 hover:text-[var(--color-cmf-red)] transition-colors"
+                className="text-[15px] font-bold text-gray-700 hover:text-[var(--color-cmf-red)] transition-colors"
               >
                 {item.name}
               </Link>
@@ -108,7 +108,7 @@ export default function Navbar() {
             
             <button
               onClick={toggleLocale}
-              className="flex items-center space-x-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              className="flex items-center space-x-1 text-[15px] font-bold text-gray-500 hover:text-gray-900 transition-colors"
             >
               <Globe size={16} />
               <span>{locale === 'en' ? '中文' : 'EN'}</span>
@@ -126,7 +126,7 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link href={`/${locale}/login`} className="text-sm font-medium text-gray-900 hover:text-[var(--color-cmf-red)]">
+                <Link href={`/${locale}/login`} className="text-[15px] font-bold text-gray-900 hover:text-[var(--color-cmf-red)]">
                   {t('login')}
                 </Link>
               </div>

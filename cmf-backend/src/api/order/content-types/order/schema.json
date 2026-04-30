@@ -109,6 +109,9 @@
     "validUntil": {
       "type": "date"
     },
+    "validFrom": {
+      "type": "date"
+    },
     "adminTaxAmount": {
       "type": "decimal"
     },

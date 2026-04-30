@@ -4,7 +4,8 @@ import crypto from 'crypto';
 export default {
   async createPaymentRequest(amount, currency, reference, customerDetails) {
     const apiKey = process.env.HITPAY_API_KEY;
-    const baseEndpoint = process.env.HITPAY_ENDPOINT?.trim() || 'api.sandbox.hit-pay.com';
+    let baseEndpoint = process.env.HITPAY_ENDPOINT?.trim() || 'api.sandbox.hit-pay.com';
+    baseEndpoint = baseEndpoint.replace(/^https?:\/\//, '');
     const endpoint = `https://${baseEndpoint}/v1/payment-requests`;
 
     try {
@@ -53,7 +54,8 @@ export default {
 
   async getPaymentRequestStatus(paymentRequestId) {
     const apiKey = process.env.HITPAY_API_KEY;
-    const baseEndpoint = process.env.HITPAY_ENDPOINT?.trim() || 'api.sandbox.hit-pay.com';
+    let baseEndpoint = process.env.HITPAY_ENDPOINT?.trim() || 'api.sandbox.hit-pay.com';
+    baseEndpoint = baseEndpoint.replace(/^https?:\/\//, '');
     const endpoint = `https://${baseEndpoint}/v1/payment-requests/${paymentRequestId}`;
 
     try {

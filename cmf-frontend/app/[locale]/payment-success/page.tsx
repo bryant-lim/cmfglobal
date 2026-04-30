@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, Loader2, UserPlus, Mail, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Loader2, UserPlus, Mail, ArrowRight, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PaymentSuccessPage() {
@@ -10,14 +10,23 @@ export default function PaymentSuccessPage() {
   const [ref, setRef] = useState<string | null>(null);
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
   const [orderType, setOrderType] = useState<'membership' | 'ticket' | null>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const r = searchParams.get('ref');
+    const paymentStatus = searchParams.get('status');
+
     if (!r) {
       setStatus('failed');
       return;
     }
     setRef(r);
+
+    // Immediately stop if HitPay explicitly returns a canceled status
+    if (paymentStatus === 'canceled' || paymentStatus === 'failed') {
+      setStatus('failed');
+      return;
+    }
 
     const verifyPayment = async () => {
       try {
@@ -26,8 +35,13 @@ export default function PaymentSuccessPage() {
 
         if (data.status === 'paid') {
           setOrderType(data.type);
+          const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+          setInvoiceUrl(data.invoicePath ? `${strapiUrl}${data.invoicePath}` : null);
           setStatus('success');
+        } else if (data.status === 'canceled' || data.status === 'failed') {
+          setStatus('failed');
         } else {
+          // Only retry if it's pending/processing
           setTimeout(verifyPayment, 3000);
         }
       } catch (err) {
@@ -74,7 +88,7 @@ export default function PaymentSuccessPage() {
               <p className="text-gray-600 font-medium leading-relaxed px-4">
                 {orderType === 'ticket' 
                   ? "Your purchase was successful. We've confirmed your spots for the event. See you there!"
-                  : "Your payment was successful. We've automatically created your account and provisioned your member profile."
+                  : "Your payment was successful. We've created your account and your membership is currently pending for approval."
                 }
               </p>
             </div>
@@ -92,6 +106,17 @@ export default function PaymentSuccessPage() {
                       : "We just sent your temporary password and login instructions to your email."
                     }
                   </p>
+                  {invoiceUrl && (
+                    <a 
+                      href={invoiceUrl} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="inline-flex items-center mt-2 text-[#E63946] font-bold text-[11px] hover:underline"
+                    >
+                      <FileText size={14} className="mr-1" />
+                      Download Invoice/Receipt
+                    </a>
+                  )}
                 </div>
               </div>
               
@@ -101,8 +126,8 @@ export default function PaymentSuccessPage() {
                     <UserPlus size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Account Ready</p>
-                    <p className="text-xs text-gray-500 font-medium leading-relaxed">Your profile is now active in our global directory.</p>
+                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Application Pending</p>
+                    <p className="text-xs text-gray-500 font-medium leading-relaxed">Your membership is currently pending for approval. We will notify you once it is active.</p>
                   </div>
                 </div>
               )}

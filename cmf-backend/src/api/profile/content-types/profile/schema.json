@@ -42,7 +42,11 @@
     },
     "passportNo": {
       "type": "string",
-      "required": true
+      "required": true,
+      "unique": true
+    },
+    "pastYearIncome": {
+      "type": "decimal"
     },
     "country": {
       "type": "string",
@@ -55,6 +59,9 @@
       "type": "email"
     },
     "billingPhone": {
+      "type": "string"
+    },
+    "billingCompanyName": {
       "type": "string"
     },
     "billingCountry": {

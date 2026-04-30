@@ -1,5 +1,13 @@
 export default {
-  register() {},
+  register({ strapi }) {
+    const userCT = strapi.contentType('plugin::users-permissions.user');
+    if (userCT) {
+      userCT.attributes.mustChangePassword = {
+        type: 'boolean',
+        default: false,
+      };
+    }
+  },
 
   async bootstrap({ strapi }) {
     // 🔐 PERMISSION SYNC: Ensure Authenticated & Public roles have correct permissions
@@ -14,7 +22,8 @@ export default {
         'api::profile.profile.testLogin',
         'api::global-setting.global-setting.find',
         'api::order.order.myOrders',
-        'api::order.order.downloadInvoice'
+        'api::order.order.downloadInvoice',
+        'api::order.order.clearPasswordFlag'
       ];
       
       const roleTypes = ['authenticated', 'public'];

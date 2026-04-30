@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function Footer() {
   const locale = useLocale();
+  const t = useTranslations('Common');
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -26,10 +27,25 @@ export default function Footer() {
 
   return (
     <footer className="bg-white border-t border-gray-100 py-6 mt-auto">
-      <div className="max-w-7xl mx-auto px-6 flex justify-center items-center">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <p className="text-[10px] font-medium text-[#1E293B] uppercase tracking-[0.2em]">
           Copyright © CMF Global Centre 2026
         </p>
+
+        <div className="flex items-center gap-6">
+          <Link 
+            href={`/${locale}/privacy-policy`}
+            className="text-[10px] font-bold text-gray-400 hover:text-[#E63946] uppercase tracking-[0.2em] transition-colors"
+          >
+            {t('privacyPolicy')}
+          </Link>
+          <Link 
+            href={`/${locale}/refund-policy`}
+            className="text-[10px] font-bold text-gray-400 hover:text-[#E63946] uppercase tracking-[0.2em] transition-colors"
+          >
+            {t('refundPolicy')}
+          </Link>
+        </div>
       </div>
     </footer>
   );

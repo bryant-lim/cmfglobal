@@ -112,10 +112,11 @@ export default async function HomePage() {
               {videos.map((url, i) => (
                 <div key={i} className="group relative aspect-video rounded-[2.5rem] overflow-hidden bg-gray-100 shadow-xl border border-gray-100">
                    <iframe
-                     src={getYoutubeEmbedUrl(url)}
+                     src={`${getYoutubeEmbedUrl(url)}?rel=0`}
                      title={`CMF Video ${i+1}`}
                      className="w-full h-full border-0 absolute inset-0"
-                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                     referrerPolicy="strict-origin-when-cross-origin"
                      allowFullScreen
                    ></iframe>
                 </div>

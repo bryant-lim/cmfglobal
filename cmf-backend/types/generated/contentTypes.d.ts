@@ -499,7 +499,9 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     description: Schema.Attribute.RichText;
     descriptionZh: Schema.Attribute.RichText;
+    directLink: Schema.Attribute.String;
     endDateTime: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    isHidden: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::event.event'> &
       Schema.Attribute.Private;
@@ -654,9 +656,9 @@ export interface ApiMembershipRecordMembershipRecord
     >;
     membershipCode: Schema.Attribute.String;
     membershipStatus: Schema.Attribute.Enumeration<
-      ['active', 'expired', 'pending']
+      ['active', 'expired', 'pending_approval']
     > &
-      Schema.Attribute.DefaultTo<'active'>;
+      Schema.Attribute.DefaultTo<'pending_approval'>;
     name: Schema.Attribute.String;
     order: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
     profile: Schema.Attribute.Relation<'manyToOne', 'api::profile.profile'>;
@@ -668,6 +670,7 @@ export interface ApiMembershipRecordMembershipRecord
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    validFrom: Schema.Attribute.Date;
     validUntil: Schema.Attribute.Date;
   };
 }
@@ -791,6 +794,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    validFrom: Schema.Attribute.Date;
     validUntil: Schema.Attribute.Date;
   };
 }
@@ -845,6 +849,7 @@ export interface ApiProfileProfile extends Struct.CollectionTypeSchema {
   };
   attributes: {
     billingAddress: Schema.Attribute.Text;
+    billingCompanyName: Schema.Attribute.String;
     billingCountry: Schema.Attribute.String;
     billingEmail: Schema.Attribute.Email;
     billingName: Schema.Attribute.String;
@@ -868,7 +873,10 @@ export interface ApiProfileProfile extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     memberId: Schema.Attribute.String & Schema.Attribute.Unique;
-    passportNo: Schema.Attribute.String & Schema.Attribute.Required;
+    passportNo: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    pastYearIncome: Schema.Attribute.Decimal;
     phone: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
@@ -1365,6 +1373,8 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     > &
       Schema.Attribute.Private;
+    mustChangePassword: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     password: Schema.Attribute.Password &
       Schema.Attribute.Private &
       Schema.Attribute.SetMinMaxLength<{

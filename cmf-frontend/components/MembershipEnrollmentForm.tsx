@@ -116,11 +116,13 @@ export default function MembershipEnrollmentForm() {
     companyName: '',
     designation: '',
     passportNo: '',
+    pastYearIncome: '',
     tShirtSize: '',
     gender: '',
     billingName: '',
     billingEmail: '',
     billingPhone: '',
+    billingCompanyName: '',
     billingAddress: '',
     billingCountry: 'China',
   });
@@ -168,11 +170,13 @@ export default function MembershipEnrollmentForm() {
               companyName: p.companyName || '',
               designation: p.designation || '',
               passportNo: p.passportNo || '',
+              pastYearIncome: p.pastYearIncome || '',
               gender: p.gender || '',
               tShirtSize: p.tShirtSize || '',
               billingName: p.billingName || `${p.firstName} ${p.lastName}`.trim(),
               billingEmail: p.billingEmail || p.email || '',
               billingPhone: p.billingPhone || p.phone || '',
+              billingCompanyName: p.billingCompanyName || p.companyName || '',
               billingAddress: p.billingAddress || '',
               billingCountry: p.billingCountry || p.country || 'China'
             }));
@@ -212,6 +216,7 @@ export default function MembershipEnrollmentForm() {
       billingName: `${prev.firstName} ${prev.lastName}`.trim(),
       billingEmail: prev.email,
       billingPhone: prev.phone,
+      billingCompanyName: prev.companyName,
       billingCountry: prev.country
     }));
   };
@@ -418,6 +423,21 @@ export default function MembershipEnrollmentForm() {
               <input name="passportNo" value={formData.passportNo} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.idNo')} />
            </div>
 
+           <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-gray-600 ml-1">{t('labels.pastYearIncome')} *</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">USD</span>
+                <input 
+                  type="number"
+                  name="pastYearIncome" 
+                  value={formData.pastYearIncome} 
+                  onChange={handleInputChange} 
+                  className="w-full pl-14 pr-4 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" 
+                  placeholder="0.00" 
+                />
+              </div>
+           </div>
+
            <div className="p-6 bg-white border border-gray-300 rounded-[2.5rem] space-y-4 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                  <div className="flex items-center space-x-3">
@@ -479,8 +499,8 @@ export default function MembershipEnrollmentForm() {
                  <div className="space-y-2">
                     <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Name *</label>
                     <input name="billingName" value={formData.billingName} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder="Full Name" />
-                 </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                        <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Email *</label>
                        <input name="billingEmail" value={formData.billingEmail} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.email')} />
@@ -489,6 +509,11 @@ export default function MembershipEnrollmentForm() {
                        <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Phone *</label>
                        <input name="billingPhone" value={formData.billingPhone} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.phone')} />
                     </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase text-gray-600 ml-1">{t('labels.billingCompanyName')}</label>
+                    <input name="billingCompanyName" value={formData.billingCompanyName} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('labels.company')} />
                  </div>
                  
                  <SearchableSelect 

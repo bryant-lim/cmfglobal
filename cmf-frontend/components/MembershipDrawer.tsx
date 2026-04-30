@@ -59,12 +59,12 @@ export default function MembershipDrawer({ isOpen, onClose, plan, locale }: Memb
             <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100">
                <div className="flex items-baseline space-x-2">
                   <span className="text-3xl font-black text-gray-900">
-                    {locale === 'cn' ? `CNY ${plan.priceCny}` : `USD ${plan.priceUsd}`}
+                    {locale === 'cn' ? `CNY ${Number(plan.priceCny).toFixed(2)}` : `USD ${Number(plan.priceUsd).toFixed(2)}`}
                   </span>
                   <span className="text-[11px] font-bold text-gray-400 uppercase">/ YEAR</span>
                </div>
                <div className="text-xs font-bold text-[var(--color-cmf-red)] mt-2 uppercase">
-                 {locale === 'cn' ? `Approx. USD ${plan.priceUsd}` : `Approx. CNY ${plan.priceCny}`}
+                 {locale === 'cn' ? `USD ${Number(plan.priceUsd).toFixed(2)}` : `CNY ${Number(plan.priceCny).toFixed(2)}`}
                </div>
             </div>
 

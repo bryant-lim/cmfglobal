@@ -155,7 +155,19 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       if (paymentStatus.status === 'completed') {
         const provisioningService: any = strapi.service('api::order.provisioning');
         await provisioningService.provisionOrder(order.id);
-        return { status: 'paid', type: order.type };
+        
+        // Generate signed invoice link
+        const appSecret = process.env.APP_KEYS ? process.env.APP_KEYS.split(',')[0] : 'cmf-secret';
+        const crypto = require('crypto');
+        const signature = crypto.createHmac('sha256', appSecret).update(order.documentId).digest('hex');
+        const invoicePath = `/api/orders/${order.documentId}/download-invoice?s=${signature}`;
+
+        return { 
+          status: 'paid', 
+          type: order.type,
+          orderId: order.documentId,
+          invoicePath
+        };
       }
 
       return { status: 'pending' };
@@ -302,6 +314,9 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
           id: {
             $eq: user.id
           }
+        },
+        orderStatus: {
+          $eq: 'paid'
         }
       },
       sort: 'createdAt:desc',
@@ -309,6 +324,18 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     });
 
     return { data: orders };
+  },
+
+  async clearPasswordFlag(ctx) {
+    const user = ctx.state.user;
+    if (!user) return ctx.unauthorized();
+
+    await strapi.db.query('plugin::users-permissions.user').update({
+      where: { id: user.id },
+      data: { mustChangePassword: false }
+    });
+
+    return { success: true };
   },
 
   async downloadInvoice(ctx) {

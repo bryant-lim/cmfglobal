@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { useTranslations, useLocale } from 'next-intl';
 import { getEvents, getFullImageUrl } from '@/lib/api';
 import { Calendar, MapPin, ChevronRight, ShieldCheck } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import TicketCheckoutDrawer from '@/components/TicketCheckoutDrawer';
 
 interface TicketTier {
@@ -31,12 +32,16 @@ interface Event {
     url: string;
   };
   tiers: TicketTier[];
+  isHidden?: boolean;
 }
 
 export default function TicketsPage() {
   const t = useTranslations('Home');
+  const tTickets = useTranslations('Forms.tickets');
   const locale = useLocale();
   const isCn = locale === 'cn';
+  const searchParams = useSearchParams();
+  const directId = searchParams.get('id');
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -73,11 +78,11 @@ export default function TicketsPage() {
     const s = new Date(start);
     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
     
-    if (!end) return s.toLocaleDateString('en-US', options);
+    if (!end) return s.toLocaleDateString('en-GB', options);
     
     const e = new Date(end);
-    const startStr = s.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    const endStr = e.toLocaleDateString('en-US', options);
+    const startStr = s.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const endStr = e.toLocaleDateString('en-GB', options);
     const timeStr = `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')} - ${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
     
     return `${startStr} - ${endStr} • ${timeStr}`;
@@ -120,7 +125,14 @@ export default function TicketsPage() {
           </div>
         ) : (
           <div className="space-y-16 max-w-6xl mx-auto">
-            {events.map((event) => {
+            {events
+              .filter((event) => {
+                if (directId) {
+                  return event.documentId === directId || event.id.toString() === directId;
+                }
+                return !event.isHidden;
+              })
+              .map((event) => {
               const displayTitle = isCn ? (event.titleZh || event.title) : event.title;
               const displayLocation = isCn ? (event.locationZh || event.location) : event.location;
               const displayDescription = isCn ? (event.descriptionZh || event.description) : event.description;
@@ -182,7 +194,7 @@ export default function TicketsPage() {
                                     </div>
                                     <div className="flex flex-col">
                                        <span className="text-lg font-black text-gray-900">
-                                         {locale === 'cn' ? `CNY ${tier.priceCny}` : `USD ${tier.priceUsd}`}
+                                         {locale === 'cn' ? `CNY ${Number(tier.priceCny).toFixed(2)}` : `USD ${Number(tier.priceUsd).toFixed(2)}`}
                                        </span>
                                      </div>
                                   </div>
@@ -208,7 +220,14 @@ export default function TicketsPage() {
                                     </div>
                                   )}
                                </div>
-                               {disabled && <div className="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-widest italic">Sold Out / Ended</div>}
+                               {disabled && (
+                                 <div className="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-widest italic">
+                                   {tier.deadline ? 
+                                     tTickets('promotionEnded', { date: new Date(tier.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }) : 
+                                     'Sold Out / Ended'
+                                   }
+                                 </div>
+                               )}
                             </div>
                           );
                         })}

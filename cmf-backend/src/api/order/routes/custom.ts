@@ -48,9 +48,9 @@ export default {
     },
     {
       method: 'GET',
-      path: '/orders/:id/invoice',
+      path: '/orders/:id/download-invoice',
       handler: 'api::order.order.downloadInvoice',
-      config: { }
+      config: { auth: false }
     },
     {
       method: 'GET',
@@ -63,6 +63,12 @@ export default {
       path: '/orders/admin-bridge',
       handler: 'api::order.order.adminBridge',
       config: { auth: false }
+    },
+    {
+      method: 'POST',
+      path: '/orders/clear-password-flag',
+      handler: 'api::order.order.clearPasswordFlag',
+      config: { }
     },
   ],
 };

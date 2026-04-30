@@ -61,6 +61,13 @@
       "relation": "oneToMany",
       "target": "api::attendee.attendee",
       "mappedBy": "event"
+    },
+    "isHidden": {
+      "type": "boolean",
+      "default": false
+    },
+    "directLink": {
+      "type": "string"
     }
   }
 }

@@ -55,7 +55,7 @@ export default function MembershipPage() {
 
       if (profileRes?.data) {
         const p = profileRes.data;
-        const tiers = [];
+        const tiers: string[] = [];
         // Check unified wallet
         if (p.wallet_records) {
           p.wallet_records.forEach((r: any) => {
@@ -91,7 +91,7 @@ export default function MembershipPage() {
       
       <div className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20 animate-in fade-in slide-in-from-top-4 duration-1000">
-          <h1 className="text-5xl font-black text-gray-900 tracking-tight">CMF Global Membership<span className="text-[#E63946]">.</span></h1>
+          <h1 className="text-5xl font-black text-gray-900 tracking-tight uppercase">CMF Awards<span className="text-[#E63946]">.</span></h1>
         </div>
 
         {loading ? (
@@ -105,7 +105,7 @@ export default function MembershipPage() {
               return (
                 <div key={catName} className="space-y-10">
                   <div className="flex items-center space-x-4">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400 whitespace-nowrap">{catName}</h3>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#E63946] whitespace-nowrap">{catName}</h3>
                     <div className="h-[1px] w-full bg-gray-200"></div>
                   </div>
 
@@ -130,17 +130,17 @@ export default function MembershipPage() {
                         )}
 
                         <div className="mb-8">
-                          <h4 className="text-lg font-bold text-gray-900 mb-2 truncate">
+                          <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 h-[3.5rem] leading-tight">
                             {locale === 'cn' ? (plan.nameZh || plan.name) : plan.name}
                           </h4>
                           <div className="flex items-baseline space-x-1">
                             <span className="text-xl font-black text-gray-900">
-                              {locale === 'cn' ? `CNY ${plan.priceCny}` : `USD ${plan.priceUsd}`}
+                              {locale === 'cn' ? `CNY ${Number(plan.priceCny).toFixed(2)}` : `USD ${Number(plan.priceUsd).toFixed(2)}`}
                             </span>
                             <span className="text-[10px] font-bold text-gray-400 uppercase">/ year</span>
                           </div>
-                          <div className="text-[10px] font-medium text-gray-400 mt-1 uppercase tracking-tight">
-                            {locale === 'cn' ? `Approx. USD ${plan.priceUsd}` : `Approx. CNY ${plan.priceCny}`}
+                          <div className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tight">
+                            {locale === 'cn' ? `USD ${Number(plan.priceUsd).toFixed(2)}` : `CNY ${Number(plan.priceCny).toFixed(2)}`}
                           </div>
                         </div>
 
