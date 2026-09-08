@@ -1,26 +1,39 @@
 export default {
-  async sendWelcomeEmail(email, tempPassword) {
+  async sendWelcomeEmail(email, tempPassword, type = 'membership') {
     try {
       const fromEmail = process.env.SMTP_FROM || 'no-reply@creativatestudio.cloud';
+      const isTicket = type === 'ticket';
+      const subject = isTicket 
+        ? `Welcome to CMF Global - Your Account Details`
+        : `CMF Global - Membership Application Received`;
       
-      console.log(`✉️ Sending Welcome to: ${email} from ${fromEmail}`);
+      console.log(`✉️ Sending Welcome (${type}) to: ${email} from ${fromEmail}`);
 
       await strapi.plugins['email'].services.email.send({
         to: email,
         from: fromEmail,
-        subject: `CMF Global - Membership Application Received`,
+        subject: subject,
         html: `
-          <h1>Application Received!</h1>
-          <p>Thank you for applying for a CMF Global membership. Your application is currently <strong>pending approval</strong>.</p>
-          <p>Our team will review your details shortly. In the meantime, you can access your dashboard using the temporary credentials below:</p>
+          <h1>${isTicket ? 'Welcome to CMF Global!' : 'Application Received!'}</h1>
+          <p>${isTicket 
+            ? 'Thank you for your purchase. We have created a member account for you to manage your tickets and profile.' 
+            : 'Thank you for applying for a CMF Global membership. Your application is currently <strong>pending approval</strong>.'
+          }</p>
+          <p>${isTicket 
+            ? 'You can access your dashboard using the temporary credentials below:' 
+            : 'Our team will review your details shortly. In the meantime, you can access your dashboard using the temporary credentials below:'
+          }</p>
           <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; margin: 20px 0;">
             <p><strong>Login Email:</strong> ${email}</p>
             <p><strong>Temporary Password:</strong> ${tempPassword}</p>
           </div>
-          <p>You will receive another email once your membership has been approved and activated.</p>
+          ${isTicket ? '' : '<p>You will receive another email once your membership has been approved and activated.</p>'}
+          <div style="margin-top: 30px;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3003'}" style="background: #1a1a1a; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Dashboard</a>
+          </div>
         `,
       });
-      console.log('✅ Welcome Email (Pending) SUCCESS');
+      console.log(`✅ Welcome Email (${type}) SUCCESS`);
     } catch (err: any) {
       console.error('❌ EMAIL ERROR:', err.message);
     }

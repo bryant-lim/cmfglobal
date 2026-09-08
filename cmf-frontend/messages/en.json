@@ -51,7 +51,8 @@
       "connectionError": "Connection failed. Please try again.",
       "securityUpdateTitle": "Security Update Required",
       "securityUpdateSub": "To protect your account, you must update your temporary password before accessing the CMF Member Portal.",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "passwordSuccess": "Password updated successfully."
     },
     "labels": {
       "firstName": "First Name",
@@ -76,9 +77,11 @@
       "newPassword": "New Password",
       "confirmPassword": "Confirm New Password",
       "pastYearIncome": "Past Year Income (USD)",
-      "billingCompanyName": "Company Name (Optional)"
+      "billingCompanyName": "Company Name (Optional)",
+      "salutation": "Salutation"
     },
     "placeholders": {
+      "selectSalutation": "Select Salutation",
       "firstName": "Enter first name",
       "lastName": "Enter last name",
       "chineseName": "Enter name in Chinese",
@@ -121,8 +124,12 @@
       "editProfile": "Edit Profile",
       "goHome": "Go Home",
       "photoInfo": "Update your profile photo. High quality portrait recommended.",
+      "photoUploaded": "Your Portrait Photo",
+      "photoImmutable": "Portrait photo cannot be changed once uploaded. Please contact the administrator if you need to update it.",
       "verified": "Verified",
-      "changePassword": "Change Password"
+      "changePassword": "Change Password",
+      "updateSuccess": "Profile updated successfully.",
+      "updateError": "Profile update failed. Please try again."
     },
     "dashboard": {
       "welcome": "Hi",

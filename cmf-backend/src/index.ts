@@ -20,6 +20,8 @@ export default {
         'api::profile.profile.directory',
         'api::profile.profile.registerPublicMember',
         'api::profile.profile.testLogin',
+        'api::profile.profile.pendingApprovals',
+        'api::profile.profile.approveMemberships',
         'api::global-setting.global-setting.find',
         'api::order.order.myOrders',
         'api::order.order.downloadInvoice',

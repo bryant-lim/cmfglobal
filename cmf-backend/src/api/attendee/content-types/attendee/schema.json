@@ -11,6 +11,9 @@
     "draftAndPublish": false
   },
   "attributes": {
+    "salutation": {
+      "type": "string"
+    },
     "firstName": {
       "type": "string",
       "required": true
@@ -21,13 +24,11 @@
     },
     "email": {
       "type": "email",
-      "required": true,
-      "unique": true
+      "required": true
     },
     "phone": {
       "type": "string",
-      "required": true,
-      "unique": true
+      "required": true
     },
     "companyName": {
       "type": "string",

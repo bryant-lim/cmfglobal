@@ -1,5 +1,29 @@
 import { factories } from '@strapi/strapi';
 
+function deduceCountryFromPhone(phone?: string, currency?: string): string | null {
+  if (!phone) {
+    return currency === 'CNY' ? 'China' : null;
+  }
+  const cleanPhone = phone.trim().replace(/[\s()-]/g, '');
+  
+  if (cleanPhone.startsWith('+86') || cleanPhone.startsWith('86')) return 'China';
+  if (cleanPhone.startsWith('+60') || cleanPhone.startsWith('60') || cleanPhone.startsWith('01')) return 'Malaysia';
+  if (cleanPhone.startsWith('+65') || cleanPhone.startsWith('65')) return 'Singapore';
+  if (cleanPhone.startsWith('+852') || cleanPhone.startsWith('852')) return 'Hong Kong';
+  if (cleanPhone.startsWith('+886') || cleanPhone.startsWith('886')) return 'Taiwan';
+  if (cleanPhone.startsWith('+853') || cleanPhone.startsWith('853')) return 'Macao';
+  if (cleanPhone.startsWith('+61') || cleanPhone.startsWith('61')) return 'Australia';
+  if (cleanPhone.startsWith('+44') || cleanPhone.startsWith('44')) return 'United Kingdom';
+  if (cleanPhone.startsWith('+1') || cleanPhone.startsWith('1')) return 'United States';
+  
+  // Chinese mobile numbers are 11 digits starting with 1
+  if (/^1\d{10}$/.test(cleanPhone)) return 'China';
+  // Singapore mobile numbers are 8 digits starting with 8 or 9
+  if (/^[89]\d{7}$/.test(cleanPhone)) return 'Singapore';
+  
+  return currency === 'CNY' ? 'China' : null;
+}
+
 export default factories.createCoreController('api::order.order', ({ strapi }) => ({
   async _getUser(ctx) {
     if (ctx.state.user) return ctx.state.user;
@@ -9,7 +33,10 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       const token = authHeader.split(' ')[1];
       try {
         const { id } = await strapi.plugin('users-permissions').service('jwt').verify(token);
-        const user = await strapi.query('plugin::users-permissions.user').findOne({ where: { id } });
+        const user = await strapi.query('plugin::users-permissions.user').findOne({ 
+          where: { id },
+          populate: ['role']
+        });
         return user;
       } catch (err) {
         return null;
@@ -108,6 +135,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
              passportNo: formData.passportNo,
              designation: formData.designation,
              country: formData.country,
+             pastYearIncome: formData.pastYearIncome,
              portraitPhotoId: files.portraitPhotoId,
              incomeSlipId: files.incomeSlipId
           }
@@ -255,9 +283,10 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
           buyerEmail: buyerInfo.email,
           buyerPhone: buyerInfo.phone,
           buyerCompanyName: buyerInfo.companyName || '',
-          buyerBillingAddress: typeof buyerInfo.billingAddress === 'string' 
-            ? { address: buyerInfo.billingAddress } 
-            : buyerInfo.billingAddress,
+          buyerBillingAddress: {
+            address: typeof buyerInfo.billingAddress === 'string' ? buyerInfo.billingAddress : (buyerInfo.billingAddress?.address || ''),
+            country: buyerInfo.billingCountry || 'N/A'
+          },
           enrollmentData: {
             attendees,
             tierInfo: {
@@ -341,13 +370,24 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
   async downloadInvoice(ctx) {
     const { id } = ctx.params;
     const { s } = ctx.query as { s?: string };
-    const user = ctx.state.user;
+    const user: any = await (this as any)._getUser(ctx);
     const appSecret = process.env.APP_KEYS ? process.env.APP_KEYS.split(',')[0] : 'cmf-secret';
 
-    const order = await strapi.documents('api::order.order').findOne({
-      documentId: id,
-      populate: ['membership_type', 'event', 'user']
-    });
+    const isNumericId = /^\d+$/.test(id);
+    let order;
+
+    if (isNumericId) {
+      const orders = await strapi.documents('api::order.order').findMany({
+        filters: { id: parseInt(id, 10) },
+        populate: ['membership_type', 'event', 'user']
+      });
+      order = orders && orders.length > 0 ? orders[0] : null;
+    } else {
+      order = await strapi.documents('api::order.order').findOne({
+        documentId: id,
+        populate: ['membership_type', 'event', 'user']
+      });
+    }
 
     if (!order) return ctx.notFound('Order not found');
 
@@ -407,7 +447,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     // Final sanity check for invalid dates
     if (isNaN(startVal.getTime())) startVal = new Date(new Date().getFullYear(), 0, 1);
-    if (isNaN(endVal.getTime())) endVal = new Date();
+    if (isNaN(endVal.getTime())) {
+      endVal = new Date();
+    } else if (endDate && endDate !== '') {
+      // Ensure the end of the day is included when an explicit date is provided
+      endVal.setUTCHours(23, 59, 59, 999);
+    }
 
     const start = startVal;
     const end = endVal;
@@ -426,9 +471,56 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
             populate: {
               profile: true
             }
+          },
+          membership_type: true
+        }
+      })) || [];
+
+      // 2. Ticket Orders
+      const ticketOrders = (await strapi.db.query('api::order.order').findMany({
+        where: {
+          orderStatus: 'paid',
+          type: 'ticket',
+          updatedAt: { $gte: start.toISOString(), $lte: end.toISOString() }
+        },
+        populate: {
+          event: true,
+          attendees: true,
+          user: {
+            populate: {
+              profile: true
+            }
           }
         }
       })) || [];
+
+      // 3. Pre-fetch all profiles for all buyer/attendee emails to ensure accurate mapping
+      const allEmailsSet = new Set<string>();
+      orders.forEach(o => {
+        if (o.buyerEmail) allEmailsSet.add(o.buyerEmail.toLowerCase().trim());
+      });
+      ticketOrders.forEach(o => {
+        if (o.buyerEmail) allEmailsSet.add(o.buyerEmail.toLowerCase().trim());
+        if (Array.isArray(o.attendees)) {
+          o.attendees.forEach((a: any) => {
+            if (a.email) allEmailsSet.add(a.email.toLowerCase().trim());
+          });
+        }
+      });
+      const allEmails = Array.from(allEmailsSet);
+
+      const emailToProfileMap = new Map();
+      if (allEmails.length > 0) {
+        const profiles = await strapi.db.query('api::profile.profile').findMany({
+          where: { email: { $in: allEmails } },
+          populate: ['portraitPhoto']
+        });
+        (profiles || []).forEach((p: any) => {
+          if (p.email) {
+            emailToProfileMap.set(p.email.toLowerCase().trim(), p);
+          }
+        });
+      }
 
       // Pre-fetch membership records for these orders to get the real "CMF-" IDs
       const orderIds = orders.map(o => o.id);
@@ -450,78 +542,189 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         if (idx === 0) {
           console.log('[DEBUG] First Order:', JSON.stringify(o, null, 2));
         }
-        stats.totalNew++;
-        
-        const mAmount = Number(o.amountPaid) || 0;
-        if (o.currency === 'USD') stats.revenueUsd += mAmount;
-        else if (o.currency === 'CNY') stats.revenueCny += mAmount;
 
-        // Extract ID from profile, enrollmentData OR the real MembershipRecord
         let enrollment: any = o.enrollmentData;
         if (typeof enrollment === 'string') {
           try { enrollment = JSON.parse(enrollment); } catch(e) {}
         }
 
-        const profile = o.user?.profile || (o.user as any)?.profile;
-        const recordCode = recordMap.get(o.id);
+        const profile = emailToProfileMap.get(o.buyerEmail?.toLowerCase()?.trim()) || o.user?.profile || (o.user as any)?.profile;
+        const orderCountry = enrollment?.country || profile?.country || 'N/A';
 
+        // Filter by country
+        if (country && country !== '' && orderCountry.toLowerCase() !== country.toLowerCase()) {
+          return;
+        }
+        
+        const mAmount = Number(o.amountPaid) || 0;
+        if (o.currency === 'USD') stats.revenueUsd += mAmount;
+        else if (o.currency === 'CNY') stats.revenueCny += mAmount;
+
+        const recordCode = recordMap.get(o.id);
         const mId = recordCode || profile?.memberId || enrollment?.memberId || o.buyerEmail || 'N/A';
+        const isRenewal = o.paymentDetails?.isRenewal === true || (enrollment?.isRenewal === true);
+        
+        if (isRenewal) {
+          stats.totalRenewal++;
+        } else {
+          stats.totalNew++;
+        }
 
         stats.membershipItems.push({
           date: o.createdAt,
           memberId: mId,
+          refNo: o.refNo || 'N/A',
           name: `${o.buyerFirstName || ''} ${o.buyerLastName || ''}`.trim() || 'Unknown',
+          chineseName: o.buyerChineseName || '',
           email: o.buyerEmail || 'N/A',
-          country: (o.enrollmentData as any)?.country || 'N/A',
+          phone: o.buyerPhone || 'N/A',
+          company: o.buyerCompanyName || 'N/A',
+          country: orderCountry,
           amount: mAmount,
           currency: o.currency || 'USD',
-          type: 'New'
+          membershipType: o.membership_type?.name || 'Standard',
+          receiptUrl: o.receiptUrl || '',
+          type: isRenewal ? 'Renewal' : 'New',
+          gender: o.gender || profile?.gender || 'N/A',
+          tShirtSize: o.tShirtSize || profile?.tShirtSize || 'N/A',
+          passportNo: enrollment?.passportNo || profile?.passportNo || 'N/A',
+          portraitPhotoUrl: profile?.portraitPhoto?.url || ''
         });
       });
-
-      // 2. Ticket Orders
-      const ticketOrders = (await strapi.db.query('api::order.order').findMany({
-        where: {
-          orderStatus: 'paid',
-          type: 'ticket',
-          updatedAt: { $gte: start.toISOString(), $lte: end.toISOString() }
-        },
-        populate: ['event', 'attendees']
-      })) || [];
 
       let ticketStats = {
         totalTickets: 0,
         revenueUsd: 0,
         revenueCny: 0,
-        attendees: [] as any[]
+        attendees: [] as any[],
+        ticketItems: [] as any[]
       };
 
       ticketOrders.forEach((o: any) => {
-        const currentAttendees = Array.isArray(o.attendees) ? o.attendees : [];
+        let enrollment: any = o.enrollmentData;
+        if (typeof enrollment === 'string') {
+          try { enrollment = JSON.parse(enrollment); } catch(e) {}
+        }
+
+        let billingAddress: any = o.buyerBillingAddress;
+        if (typeof billingAddress === 'string') {
+          try { billingAddress = JSON.parse(billingAddress); } catch(e) {}
+        }
+
+        const profile = o.user?.profile || (o.user as any)?.profile;
+        const buyerProfile = emailToProfileMap.get(o.buyerEmail?.toLowerCase()?.trim()) || profile;
+        const phone = o.buyerPhone || (enrollment?.attendees && enrollment.attendees[0]?.phone);
+        const ticketCountry = billingAddress?.country || 
+                              enrollment?.country || 
+                              profile?.country || 
+                              buyerProfile?.country || 
+                              deduceCountryFromPhone(phone, o.currency) || 
+                              'N/A';
+
+        // Filter by country
+        if (country && country !== '' && ticketCountry.toLowerCase() !== country.toLowerCase()) {
+          return;
+        }
+
+        // Filter by eventId
+        if (eventId && eventId !== '') {
+          const matchDocId = o.event?.documentId === eventId || o.event?.document_id === eventId;
+          const matchId = String(o.event?.id) === String(eventId);
+          const matchTitle = (o.event?.title || o.event?.name) === eventId;
+          if (!matchDocId && !matchId && !matchTitle) {
+            return;
+          }
+        }
+
+        const currentAttendees = (Array.isArray(o.attendees) && o.attendees.length > 0)
+          ? o.attendees
+          : (Array.isArray(enrollment?.attendees) ? enrollment.attendees : []);
         ticketStats.totalTickets += currentAttendees.length;
         
         const tAmount = Number(o.amountPaid) || 0;
         if (o.currency === 'USD') ticketStats.revenueUsd += tAmount;
         else if (o.currency === 'CNY') ticketStats.revenueCny += tAmount;
 
-        currentAttendees.forEach((a: any) => {
+        ticketStats.ticketItems.push({
+          date: o.createdAt,
+          refNo: o.refNo || 'N/A',
+          name: `${o.buyerFirstName || ''} ${o.buyerLastName || ''}`.trim() || 'Unknown',
+          chineseName: o.buyerChineseName || '',
+          email: o.buyerEmail || 'N/A',
+          phone: o.buyerPhone || 'N/A',
+          company: o.buyerCompanyName || 'N/A',
+          country: ticketCountry,
+          event: o.event?.title || o.event?.name || 'Unknown Event',
+          eventId: o.event?.documentId || o.event?.id || '',
+          tierName: enrollment?.tierInfo?.name || 'Standard',
+          quantity: currentAttendees.length,
+          amount: tAmount,
+          currency: o.currency || 'USD',
+          receiptUrl: o.receiptUrl || '',
+          gender: o.gender || buyerProfile?.gender || 'N/A',
+          tShirtSize: o.tShirtSize || buyerProfile?.tShirtSize || 'N/A',
+          passportNo: enrollment?.passportNo || buyerProfile?.passportNo || 'N/A'
+        });
+
+        currentAttendees.forEach((a: any, idx: number) => {
+          const attendeeProfile = emailToProfileMap.get(a.email?.toLowerCase()?.trim());
+          const salutation = a.salutation || enrollment?.attendees?.[idx]?.salutation || '';
+          
+          let gender = attendeeProfile?.gender || a.gender || '';
+          if (!gender || gender === 'N/A') {
+            if (salutation === 'Mr') gender = 'Male';
+            else if (salutation === 'Ms' || salutation === 'Mrs') gender = 'Female';
+            else gender = 'N/A';
+          }
+
           ticketStats.attendees.push({
             ref: a.referenceCode || o.refNo || 'N/A',
+            salutation: salutation || 'N/A',
             name: `${a.firstName || ''} ${a.lastName || ''}`.trim() || 'Guest',
+            gender: gender,
             email: a.email || 'N/S',
             phone: a.phone || 'N/S',
             company: a.companyName || 'N/A',
             event: o.event?.title || o.event?.name || 'Unknown Event',
+            eventId: o.event?.documentId || o.event?.id || '',
             orderRef: o.refNo,
-            purchaseDate: o.createdAt
+            purchaseDate: o.createdAt,
+            tShirtSize: attendeeProfile?.tShirtSize || 'N/A',
+            passportNo: attendeeProfile?.passportNo || 'N/A'
           });
         });
       });
 
+      let expiredMembers = 0;
+      try {
+        const expiredRecords = await strapi.db.query('api::membership-record.membership-record').findMany({
+          where: {
+            membershipStatus: 'expired'
+          },
+          populate: ['profile']
+        }) || [];
+
+        const uniqueProfiles = new Set();
+        expiredRecords.forEach((r: any) => {
+          if (r.profile) {
+            if (country && country !== '') {
+              if (r.profile.country && r.profile.country.toLowerCase() === country.toLowerCase()) {
+                uniqueProfiles.add(r.profile.id);
+              }
+            } else {
+              uniqueProfiles.add(r.profile.id);
+            }
+          }
+        });
+        expiredMembers = uniqueProfiles.size;
+      } catch (err) {
+        console.error('Failed to calculate unique expired members:', err);
+      }
+
       return {
         summary: {
-            activeMembers: orders.length,
-            expiredMembers: 0,
+            activeMembers: stats.membershipItems.length,
+            expiredMembers,
             newMembersInPeriod: stats.totalNew,
             renewalsInPeriod: stats.totalRenewal,
             totalMembershipRevenueUsd: stats.revenueUsd,
@@ -531,6 +734,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
             totalTicketRevenueCny: ticketStats.revenueCny
         },
         membershipRows: stats.membershipItems,
+        ticketRows: ticketStats.ticketItems,
         attendeeRows: ticketStats.attendees
       };
     } catch (err: any) {

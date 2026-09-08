@@ -155,7 +155,7 @@ export default function OrdersPage() {
                               onClick={async () => {
                                 const token = localStorage.getItem('cmf_token');
                                 try {
-                                  const res = await fetch(`${strapiUrl}/api/orders/${order.documentId}/invoice`, {
+                                  const res = await fetch(`${strapiUrl}/api/orders/${order.documentId}/download-invoice`, {
                                     headers: { Authorization: `Bearer ${token}` }
                                   });
                                   if (res.ok) {

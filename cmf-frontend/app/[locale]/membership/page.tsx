@@ -59,7 +59,13 @@ export default function MembershipPage() {
         // Check unified wallet
         if (p.wallet_records) {
           p.wallet_records.forEach((r: any) => {
-            if (r.membership_type?.documentId) tiers.push(r.membership_type.documentId);
+            if (r.membership_type?.documentId && r.membershipStatus === 'active') {
+              const now = new Date();
+              const validUntil = r.validUntil ? new Date(r.validUntil) : null;
+              if (!validUntil || validUntil >= now) {
+                tiers.push(r.membership_type.documentId);
+              }
+            }
           });
         }
         setActiveTiers(tiers);

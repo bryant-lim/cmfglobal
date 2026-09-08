@@ -54,6 +54,12 @@ export default {
     },
     {
       method: 'GET',
+      path: '/orders/:id/invoice',
+      handler: 'api::order.order.downloadInvoice',
+      config: { auth: false }
+    },
+    {
+      method: 'GET',
       path: '/orders/report',
       handler: 'api::order.order.report',
       config: { auth: false }

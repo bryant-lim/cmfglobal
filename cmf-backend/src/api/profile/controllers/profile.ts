@@ -335,5 +335,120 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
       console.error('❌ Registration Logic Error:', err.message);
       return ctx.internalServerError('Failed to create account. Please try again later.');
     }
+  },
+
+  async pendingApprovals(ctx) {
+    const authHeader = ctx.request.header.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return ctx.unauthorized('No authorization token provided');
+    }
+    const token = authHeader.split(' ')[1];
+    
+    let payload;
+    try {
+      payload = await strapi.plugin('users-permissions').service('jwt').verify(token);
+    } catch (err) {
+      return ctx.unauthorized('Invalid or expired token');
+    }
+
+    if (!payload || !payload.id) {
+      return ctx.unauthorized('Invalid token payload');
+    }
+
+    const userWithRole = await strapi.query('plugin::users-permissions.user').findOne({
+      where: { id: payload.id },
+      populate: ['role']
+    });
+    
+    if (!userWithRole) {
+      return ctx.unauthorized('User not found');
+    }
+
+    const isAdmin = userWithRole?.role?.name === 'Admin' || userWithRole?.role?.type === 'admin';
+    if (!isAdmin) {
+      return ctx.unauthorized('Access denied');
+    }
+
+    const pendingRecords = await strapi.db.query('api::membership-record.membership-record').findMany({
+      where: { membershipStatus: 'pending_approval' },
+      populate: {
+        profile: {
+          populate: {
+            portraitPhoto: true,
+            incomeSlip: true
+          }
+        },
+        membership_type: true,
+        user: true
+      }
+    });
+
+    return { data: pendingRecords };
+  },
+
+  async approveMemberships(ctx) {
+    const authHeader = ctx.request.header.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return ctx.unauthorized('No authorization token provided');
+    }
+    const token = authHeader.split(' ')[1];
+    
+    let payload;
+    try {
+      payload = await strapi.plugin('users-permissions').service('jwt').verify(token);
+    } catch (err) {
+      return ctx.unauthorized('Invalid or expired token');
+    }
+
+    if (!payload || !payload.id) {
+      return ctx.unauthorized('Invalid token payload');
+    }
+
+    const userWithRole = await strapi.query('plugin::users-permissions.user').findOne({
+      where: { id: payload.id },
+      populate: ['role']
+    });
+    
+    if (!userWithRole) {
+      return ctx.unauthorized('User not found');
+    }
+
+    const isAdmin = userWithRole?.role?.name === 'Admin' || userWithRole?.role?.type === 'admin';
+    if (!isAdmin) return ctx.unauthorized('Access denied');
+
+    const { ids } = ctx.request.body as { ids: number[] };
+    if (!ids || !Array.isArray(ids)) {
+      return ctx.badRequest('Missing or invalid membership record IDs');
+    }
+
+    const approvedCount = [];
+    for (const recordId of ids) {
+      const record = await strapi.db.query('api::membership-record.membership-record').findOne({
+        where: { id: recordId },
+        populate: ['membership_type']
+      });
+
+      if (record && record.membershipStatus === 'pending_approval') {
+        const now = new Date();
+        const validFrom = now.toISOString().split('T')[0];
+        
+        const validityMonths = record.membership_type?.validityMonths || 12;
+        const expiryDate = new Date(now);
+        expiryDate.setMonth(expiryDate.getMonth() + validityMonths);
+        const validUntil = expiryDate.toISOString().split('T')[0];
+
+        await strapi.db.query('api::membership-record.membership-record').update({
+          where: { id: recordId },
+          data: {
+            membershipStatus: 'active',
+            validFrom,
+            validUntil
+          }
+        });
+        approvedCount.push(recordId);
+      }
+    }
+
+    return { success: true, approvedCount };
   }
 }));

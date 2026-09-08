@@ -20,6 +20,18 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const [portraitPhoto, setPortraitPhoto] = useState<Blob | null>(null);
+  const [portraitPhotoPreview, setPortraitPhotoPreview] = useState<string>('');
+
+  // Clean up object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (portraitPhotoPreview && portraitPhotoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(portraitPhotoPreview);
+      }
+    };
+  }, [portraitPhotoPreview]);
   const searchParams = useSearchParams();
   const isForcedChange = searchParams.get('forceChange') === 'true';
   
@@ -51,6 +63,9 @@ export default function ProfilePage() {
       const result = await res.json();
       if (result.data) {
         setProfile(result.data);
+        if (result.data.portraitPhoto) {
+          setPortraitPhotoPreview(getFullImageUrl(result.data.portraitPhoto.url) || '');
+        }
       }
     } catch (err) {
       console.error('Profile fetch failed');
@@ -66,6 +81,26 @@ export default function ProfilePage() {
 
     const token = localStorage.getItem('cmf_token');
     try {
+      let photoId = null;
+
+      if (portraitPhoto) {
+        const formData = new FormData();
+        formData.append('files', portraitPhoto, `${profile.firstName}_portrait.jpg`);
+        
+        const uploadRes = await fetch(`${strapiUrl}/api/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          photoId = uploadData[0]?.id;
+        } else {
+          throw new Error('Photo upload failed');
+        }
+      }
+
       const res = await fetch(`${strapiUrl}/api/profiles/update-me`, {
         method: 'PUT',
         headers: { 
@@ -83,55 +118,21 @@ export default function ProfilePage() {
             country: profile.country,
             gender: profile.gender,
             tShirtSize: profile.tShirtSize,
-            pastYearIncome: profile.pastYearIncome
+            pastYearIncome: profile.pastYearIncome,
+            ...(photoId ? { portraitPhoto: photoId } : {})
           }
         })
       });
 
       if (res.ok) {
         setMessage({ type: 'success', text: t('profile.updateSuccess') });
+        setPortraitPhoto(null);
+        fetchProfile();
       } else {
         throw new Error('Update failed');
       }
     } catch (err) {
       setMessage({ type: 'error', text: t('profile.updateError') });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePhotoUpload = async (blob: Blob) => {
-    setSaving(true);
-    const token = localStorage.getItem('cmf_token');
-    
-    try {
-      const formData = new FormData();
-      formData.append('files', blob, `${profile.firstName}_portrait.jpg`);
-      
-      const uploadRes = await fetch(`${strapiUrl}/api/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData
-      });
-      const uploadData = await uploadRes.json();
-      const photoId = uploadData[0]?.id;
-
-      if (photoId) {
-        await fetch(`${strapiUrl}/api/profiles/update-me`, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({
-            data: { portraitPhoto: photoId }
-          })
-        });
-        setMessage({ type: 'success', text: t('profile.photoSuccess') });
-        fetchProfile();
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: t('profile.photoError') });
     } finally {
       setSaving(false);
     }
@@ -188,6 +189,31 @@ export default function ProfilePage() {
 
   if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-gray-400">{commonT('loading')}</div>;
 
+  if (!profile) {
+    return (
+      <div className="max-w-md mx-auto p-12 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm text-center space-y-6 mt-12 animate-in fade-in duration-500">
+        <div className="w-16 h-16 bg-red-50 text-[#E63946] rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle size={28} />
+        </div>
+        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Profile Not Found</h2>
+        <p className="text-gray-500 text-xs font-bold leading-relaxed">
+          We could not retrieve a member profile linked to your user account. Please log in again or contact an administrator.
+        </p>
+        <div className="pt-4">
+          <button 
+            onClick={() => {
+              localStorage.removeItem('cmf_token');
+              router.push(`/${locale}/login`);
+            }}
+            className="w-full py-4 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#E63946] transition-all"
+          >
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-10 pb-20 px-4 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
@@ -212,13 +238,46 @@ export default function ProfilePage() {
         <div className="space-y-6">
            <div className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-4 text-center">
               <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">{t('labels.uploadPortrait')}</h3>
-              <ImageCropper 
-                onCropComplete={handlePhotoUpload} 
-                initialImage={profile?.portraitPhoto ? getFullImageUrl(profile.portraitPhoto.url) : ''} 
-              />
-              <p className="text-[9px] font-bold text-gray-400 uppercase leading-relaxed">
-                {t('profile.photoInfo')}
-              </p>
+              {profile?.portraitPhoto ? (
+                <div className="space-y-4 py-4">
+                  <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm mx-auto bg-white flex items-center justify-center">
+                    <img 
+                      src={portraitPhotoPreview} 
+                      alt="Portrait" 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                  <p className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
+                    {t('profile.photoUploaded')}
+                  </p>
+                  <p className="text-[9px] font-bold text-gray-400 uppercase leading-relaxed px-4">
+                    {t('profile.photoImmutable')}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <ImageCropper 
+                    onCropComplete={(blob) => {
+                      setPortraitPhoto(blob);
+                      if (portraitPhotoPreview && portraitPhotoPreview.startsWith('blob:')) {
+                        URL.revokeObjectURL(portraitPhotoPreview);
+                      }
+                      setPortraitPhotoPreview(URL.createObjectURL(blob));
+                    }} 
+                    onClear={() => {
+                      setPortraitPhoto(null);
+                      if (portraitPhotoPreview && portraitPhotoPreview.startsWith('blob:')) {
+                        URL.revokeObjectURL(portraitPhotoPreview);
+                      }
+                      setPortraitPhotoPreview('');
+                    }}
+                    initialImage={portraitPhotoPreview}
+                  />
+                  <p className="text-[9px] font-bold text-gray-400 uppercase leading-relaxed">
+                    {t('profile.photoInfo')}
+                  </p>
+                </>
+              )}
            </div>
         </div>
 

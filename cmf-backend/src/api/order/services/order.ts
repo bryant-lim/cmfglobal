@@ -247,6 +247,14 @@ export default factories.createCoreService('api::order.order', ({ strapi }) => (
       
       doc.text(address, 300, startY + 50, { width: 250 });
 
+      // --- CALCULATIONS ---
+      const enrollment = typeof order.enrollmentData === 'string' ? JSON.parse(order.enrollmentData) : order.enrollmentData;
+      const quantity = (order.type === 'ticket' && Array.isArray(enrollment?.attendees)) ? enrollment.attendees.length : 1;
+      const taxAmount = Number(order.adminTaxAmount) || 0;
+      const grandTotal = Number(order.amountPaid) || 0;
+      const subtotal = grandTotal - taxAmount;
+      const unitPrice = subtotal / quantity;
+
       // --- TABLE ---
       doc.moveDown(4);
       const tableTop = 270;
@@ -254,25 +262,32 @@ export default factories.createCoreService('api::order.order', ({ strapi }) => (
       
       doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(10);
       doc.text('DESCRIPTION', 60, tableTop + 7);
-      doc.text('UNIT PRICE', 350, tableTop + 7, { width: 90, align: 'right' });
+      doc.text('QTY', 280, tableTop + 7, { width: 40, align: 'center' });
+      doc.text('UNIT PRICE', 320, tableTop + 7, { width: 100, align: 'right' });
       doc.text('TOTAL', 450, tableTop + 7, { width: 90, align: 'right' });
 
       doc.font('Helvetica').fillColor('#000000').fontSize(11);
       const description = order.membership_type?.name || order.event?.title || (order.type === 'membership' ? 'CMF Membership Subscription' : 'Event Ticket Purchase');
       
-      doc.text(description, 60, tableTop + 40, { width: 280 });
-      doc.text(`${order.currency} ${order.amountPaid?.toFixed(2)}`, 350, tableTop + 40, { width: 90, align: 'right' });
-      doc.text(`${order.currency} ${order.amountPaid?.toFixed(2)}`, 450, tableTop + 40, { width: 90, align: 'right' });
+      doc.text(description, 60, tableTop + 40, { width: 210 });
+      doc.text(quantity.toString(), 280, tableTop + 40, { width: 40, align: 'center' });
+      doc.text(`${order.currency} ${unitPrice.toFixed(2)}`, 320, tableTop + 40, { width: 100, align: 'right' });
+      doc.text(`${order.currency} ${subtotal.toFixed(2)}`, 450, tableTop + 40, { width: 90, align: 'right' });
 
       // --- TOTALS ---
       const totalTop = tableTop + 100;
-      doc.font('Helvetica-Bold').text('SUBTOTAL:', 350, totalTop, { width: 90, align: 'right' });
-      doc.font('Helvetica').text(`${order.currency} ${order.amountPaid?.toFixed(2)}`, 450, totalTop, { width: 90, align: 'right' });
+      doc.font('Helvetica-Bold').fontSize(10);
+      
+      doc.text('SUBTOTAL:', 350, totalTop, { width: 90, align: 'right' });
+      doc.font('Helvetica').text(`${order.currency} ${subtotal.toFixed(2)}`, 450, totalTop, { width: 90, align: 'right' });
+
+      doc.font('Helvetica-Bold').text('TAX:', 350, totalTop + 20, { width: 90, align: 'right' });
+      doc.font('Helvetica').text(`${order.currency} ${taxAmount.toFixed(2)}`, 450, totalTop + 20, { width: 90, align: 'right' });
 
       doc.rect(340, totalTop + 45, 210, 40).fill(primaryColor);
       doc.fillColor('#FFFFFF').fontSize(14).font('Helvetica-Bold');
       doc.text('GRAND TOTAL:', 350, totalTop + 58);
-      doc.text(`${order.currency} ${order.amountPaid?.toFixed(2)}`, 450, totalTop + 58, { width: 90, align: 'right' });
+      doc.text(`${order.currency} ${grandTotal.toFixed(2)}`, 450, totalTop + 58, { width: 90, align: 'right' });
 
       doc.moveDown(10);
       doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('PAYMENT DETAILS', 50, doc.y);

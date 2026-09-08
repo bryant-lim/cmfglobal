@@ -446,9 +446,7 @@ export interface ApiAttendeeAttendee extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    email: Schema.Attribute.Email &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    email: Schema.Attribute.Email & Schema.Attribute.Required;
     event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -465,11 +463,10 @@ export interface ApiAttendeeAttendee extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'>;
-    phone: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    phone: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     referenceCode: Schema.Attribute.String & Schema.Attribute.Unique;
+    salutation: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

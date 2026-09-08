@@ -33,7 +33,7 @@ export default function AdminAuthBridge() {
           
           // Small delay for visual confirmation
           setTimeout(() => {
-            router.push(`/${locale}/admin/reporting`);
+            router.push(`/${locale}/reporting-portal/reporting`);
           }, 1000);
         } else {
           setError(data.error?.message || 'Authentication failed');

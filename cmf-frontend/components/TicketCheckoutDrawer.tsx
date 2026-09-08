@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { X, CreditCard, User, Loader2 } from 'lucide-react';
+import { COUNTRIES } from '@/lib/country-data';
 
 interface Attendee {
+  salutation: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -32,6 +34,7 @@ export default function TicketCheckoutDrawer({ isOpen, onClose, event, tier, qua
     phone: '',
     companyName: '',
     billingAddress: '',
+    billingCountry: 'China',
   });
 
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -48,6 +51,7 @@ export default function TicketCheckoutDrawer({ isOpen, onClose, event, tier, qua
     if (isOpen && quantity > 0) {
       // Initialize attendees based on quantity
       const initialAttendees = Array.from({ length: quantity }).map(() => ({
+        salutation: 'Mr',
         firstName: '',
         lastName: '',
         email: '',
@@ -83,6 +87,7 @@ export default function TicketCheckoutDrawer({ isOpen, onClose, event, tier, qua
                     phone: p.phone || '',
                     companyName: p.companyName || '',
                     billingAddress: p.billingAddress || '',
+                    billingCountry: p.country || p.billingCountry || 'China',
                 });
             }
         }).catch(e => console.log('Not logged in or profile not found'));
@@ -212,6 +217,21 @@ export default function TicketCheckoutDrawer({ isOpen, onClose, event, tier, qua
                     onChange={(e) => setBuyerInfo({ ...buyerInfo, billingAddress: e.target.value })}
                    />
                 </div>
+                <div className="md:col-span-2">
+                  <label className="text-[11px] font-black uppercase text-gray-600 ml-1">{t('labels.country')} *</label>
+                  <select
+                    required
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900"
+                    value={buyerInfo.billingCountry}
+                    onChange={(e) => setBuyerInfo({ ...buyerInfo, billingCountry: e.target.value })}
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </section>
 
@@ -231,6 +251,7 @@ export default function TicketCheckoutDrawer({ isOpen, onClose, event, tier, qua
                     if (attendees.length > 0) {
                       const newAttendees = [...attendees];
                       newAttendees[0] = {
+                        salutation: newAttendees[0]?.salutation || 'Mr',
                         firstName: buyerInfo.firstName,
                         lastName: buyerInfo.lastName,
                         email: buyerInfo.email,
@@ -254,44 +275,60 @@ export default function TicketCheckoutDrawer({ isOpen, onClose, event, tier, qua
                      </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <input
-                      required
-                      placeholder={t('labels.firstName')}
-                      className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
-                      value={a.firstName}
-                      onChange={(e) => handleAttendeeChange(idx, 'firstName', e.target.value)}
-                    />
-                    <input
-                      required
-                      placeholder={t('labels.lastName')}
-                      className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
-                      value={a.lastName}
-                      onChange={(e) => handleAttendeeChange(idx, 'lastName', e.target.value)}
-                    />
-                    <input
-                      required
-                      type="email"
-                      placeholder={t('labels.email')}
-                      className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
-                      value={a.email}
-                      onChange={(e) => handleAttendeeChange(idx, 'email', e.target.value)}
-                    />
-                    <input
-                      required
-                      placeholder={t('labels.phone')}
-                      className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
-                      value={a.phone}
-                      onChange={(e) => handleAttendeeChange(idx, 'phone', e.target.value)}
-                    />
-                    <div className="md:col-span-2">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <select
+                        required
+                        aria-label={t('labels.salutation')}
+                        className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 cursor-pointer"
+                        value={a.salutation}
+                        onChange={(e) => handleAttendeeChange(idx, 'salutation', e.target.value)}
+                      >
+                        <option value="Mr">Mr</option>
+                        <option value="Ms">Ms</option>
+                        <option value="Mrs">Mrs</option>
+                        <option value="Dr">Dr</option>
+                      </select>
                       <input
                         required
-                        placeholder={t('labels.company')}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
-                        value={a.companyName}
-                        onChange={(e) => handleAttendeeChange(idx, 'companyName', e.target.value)}
+                        placeholder={t('labels.firstName')}
+                        className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
+                        value={a.firstName}
+                        onChange={(e) => handleAttendeeChange(idx, 'firstName', e.target.value)}
                       />
+                      <input
+                        required
+                        placeholder={t('labels.lastName')}
+                        className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
+                        value={a.lastName}
+                        onChange={(e) => handleAttendeeChange(idx, 'lastName', e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        required
+                        type="email"
+                        placeholder={t('labels.email')}
+                        className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
+                        value={a.email}
+                        onChange={(e) => handleAttendeeChange(idx, 'email', e.target.value)}
+                      />
+                      <input
+                        required
+                        placeholder={t('labels.phone')}
+                        className="px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
+                        value={a.phone}
+                        onChange={(e) => handleAttendeeChange(idx, 'phone', e.target.value)}
+                      />
+                      <div className="md:col-span-2">
+                        <input
+                          required
+                          placeholder={t('labels.company')}
+                          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-[#E63946] focus:ring-4 focus:ring-red-50 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-400"
+                          value={a.companyName}
+                          onChange={(e) => handleAttendeeChange(idx, 'companyName', e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

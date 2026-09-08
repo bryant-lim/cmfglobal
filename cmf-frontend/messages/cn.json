@@ -51,7 +51,8 @@
       "connectionError": "连接失败，请稍后重试。",
       "securityUpdateTitle": "需进行安全更新",
       "securityUpdateSub": "为了保护您的账户，您必须在访问CMF会员门户之前更新您的临时密码。",
-      "passwordMismatch": "密码不匹配"
+      "passwordMismatch": "密码不匹配",
+      "passwordSuccess": "密码更新成功。"
     },
     "labels": {
       "firstName": "名",
@@ -76,9 +77,11 @@
       "newPassword": "新密码",
       "confirmPassword": "确认新密码",
       "pastYearIncome": "去年总收入 (USD)",
-      "billingCompanyName": "公司名称 (可选)"
+      "billingCompanyName": "公司名称 (可选)",
+      "salutation": "称谓"
     },
     "placeholders": {
+      "selectSalutation": "请选择称谓",
       "firstName": "请输入名字",
       "lastName": "请输入姓氏",
       "chineseName": "请输入中文姓名",
@@ -121,8 +124,12 @@
       "editProfile": "编辑资料",
       "goHome": "返回首页",
       "photoInfo": "更新您的个人头像。建议使用高质量证件照。",
+      "photoUploaded": "您的证件照",
+      "photoImmutable": "证件照一旦上传便无法修改。如需更新，请联系管理员。",
       "verified": "已验证",
-      "changePassword": "修改密码"
+      "changePassword": "修改密码",
+      "updateSuccess": "个人资料更新成功。",
+      "updateError": "个人资料更新失败，请重试。"
     },
     "dashboard": {
       "welcome": "您好",

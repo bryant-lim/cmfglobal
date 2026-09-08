@@ -1,27 +1,58 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactCrop, { centerCrop, makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { Camera, RefreshCw } from 'lucide-react';
+import { Camera, RefreshCw, Check } from 'lucide-react';
 
 interface ImageCropperProps {
   onCropComplete: (blob: Blob) => void;
   aspectRatio?: number;
   initialImage?: string;
+  onClear?: () => void;
 }
 
-export default function ImageCropper({ onCropComplete, aspectRatio = 3 / 4, initialImage = '' }: ImageCropperProps) {
+export default function ImageCropper({ 
+  onCropComplete, 
+  aspectRatio = 3 / 4, 
+  initialImage = '', 
+  onClear
+}: ImageCropperProps) {
   const [imgSrc, setImgSrc] = useState(initialImage);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [isConfirmed, setIsConfirmed] = useState(!!initialImage);
+  const [previewUrl, setPreviewUrl] = useState(initialImage);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (initialImage) {
+      // If we are actively editing, do NOT override with the intermediate preview
+      if (imgSrc && !isConfirmed) {
+        return;
+      }
+      setImgSrc(initialImage);
+      setPreviewUrl(initialImage);
+      setIsConfirmed(true);
+    } else {
+      if (!imgSrc) {
+        setImgSrc('');
+        setPreviewUrl('');
+        setIsConfirmed(false);
+      }
+    }
+  }, [initialImage, imgSrc, isConfirmed]);
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setCrop(undefined);
+      setCompletedCrop(undefined);
+      setIsConfirmed(false);
       const reader = new FileReader();
-      reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
+      reader.addEventListener('load', () => {
+        setImgSrc(reader.result?.toString() || '');
+        setPreviewUrl('');
+      });
       reader.readAsDataURL(e.target.files[0]);
     }
   };
@@ -34,43 +65,103 @@ export default function ImageCropper({ onCropComplete, aspectRatio = 3 / 4, init
       height
     );
     setCrop(initialCrop);
+
+    // Calculate initial completedCrop in pixels so it triggers the auto-crop immediately
+    const pixelWidth = (width * 90) / 100;
+    const pixelHeight = pixelWidth / aspectRatio;
+    const initialPixelCrop: PixelCrop = {
+      unit: 'px',
+      x: (width - pixelWidth) / 2,
+      y: (height - pixelHeight) / 2,
+      width: pixelWidth,
+      height: pixelHeight
+    };
+    setCompletedCrop(initialPixelCrop);
   };
 
-  const generateCroppedImage = useCallback(async () => {
-    if (completedCrop && imgRef.current) {
+  // Automatically generate cropped image when completedCrop changes
+  useEffect(() => {
+    if (imgRef.current && imgSrc && !isConfirmed) {
+      let activeCrop = completedCrop;
+      if (!activeCrop) {
+        const image = imgRef.current;
+        const width = image.width;
+        const height = image.height;
+        const cropWidth = width * 0.9;
+        const cropHeight = cropWidth / aspectRatio;
+        
+        activeCrop = {
+          unit: 'px',
+          x: (width - cropWidth) / 2,
+          y: (height - cropHeight) / 2,
+          width: cropWidth,
+          height: cropHeight
+        };
+      }
+      
       const canvas = document.createElement('canvas');
       const image = imgRef.current;
       const scaleX = image.naturalWidth / image.width;
       const scaleY = image.naturalHeight / image.height;
-      canvas.width = completedCrop.width * scaleX;
-      canvas.height = completedCrop.height * scaleY;
+      canvas.width = activeCrop.width * scaleX;
+      canvas.height = activeCrop.height * scaleY;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(
           image,
-          completedCrop.x * scaleX,
-          completedCrop.y * scaleY,
-          completedCrop.width * scaleX,
-          completedCrop.height * scaleY,
+          activeCrop.x * scaleX,
+          activeCrop.y * scaleY,
+          activeCrop.width * scaleX,
+          activeCrop.height * scaleY,
           0,
           0,
           canvas.width,
           canvas.height
         );
         canvas.toBlob((blob) => {
-          if (blob) onCropComplete(blob);
+          if (blob) {
+            onCropComplete(blob);
+          }
         }, 'image/jpeg', 0.95);
       }
     }
-  }, [completedCrop, onCropComplete]);
+  }, [completedCrop, imgSrc, isConfirmed, onCropComplete, aspectRatio]);
 
-  const handleApplyCrop = async () => {
-    await generateCroppedImage();
+  const handleClear = () => {
+    setImgSrc('');
+    setPreviewUrl('');
+    setIsConfirmed(false);
+    onClear?.();
   };
 
   return (
     <div className="relative border-2 border-dashed border-gray-200 rounded-[2rem] p-6 text-center hover:border-red-200 transition-all bg-gray-50/30">
-      {imgSrc ? (
+      {isConfirmed && previewUrl ? (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="relative max-w-[200px] mx-auto group">
+            <img 
+              src={previewUrl} 
+              className="w-full aspect-[3/4] object-cover rounded-2xl shadow-xl border border-gray-100 transition-transform duration-300 group-hover:scale-[1.02]" 
+              alt="Cropped Portrait" 
+            />
+            <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-1.5 shadow-lg border border-white">
+              <Check size={14} strokeWidth={3} />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 justify-center">
+              Portrait Confirmed
+            </div>
+            <button 
+              type="button"
+              onClick={handleClear} 
+              className="mt-2 flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#E63946] transition-all"
+            >
+              <RefreshCw size={12} /> Change Photo
+            </button>
+          </div>
+        </div>
+      ) : imgSrc ? (
         <div className="space-y-4">
           <ReactCrop 
             crop={crop} 
@@ -83,16 +174,11 @@ export default function ImageCropper({ onCropComplete, aspectRatio = 3 / 4, init
           </ReactCrop>
           <div className="flex flex-col items-center gap-3">
             <button 
-                onClick={handleApplyCrop}
-                className="w-full py-2 bg-[#E63946] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-red-100 hover:bg-black transition-all"
+              type="button"
+              onClick={handleClear} 
+              className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-red-500 transition-all"
             >
-                Confirm Portrait
-            </button>
-            <button 
-                onClick={() => setImgSrc('')} 
-                className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-red-500 transition-all"
-            >
-                <RefreshCw size={12} /> Change Photo
+              <RefreshCw size={12} /> Change Photo
             </button>
           </div>
         </div>

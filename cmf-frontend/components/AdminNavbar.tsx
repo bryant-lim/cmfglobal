@@ -20,13 +20,13 @@ export default function AdminNavbar() {
         <div className="flex justify-between items-center h-20">
           
           <div className="flex items-center space-x-6">
-            <Link 
-              href={`/${locale}`}
+            <a 
+              href={`${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339'}/admin`}
               className="flex items-center text-xs font-black uppercase tracking-widest text-gray-400 hover:text-[#E63946] transition-all group"
             >
               <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-              Back to Main Website
-            </Link>
+              Back to Admin Portal
+            </a>
             <div className="h-6 w-[1px] bg-gray-100"></div>
             <div className="flex items-center space-x-3">
                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-[#E63946]">

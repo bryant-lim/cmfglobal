@@ -29,6 +29,18 @@ export default {
       path: '/profiles/testLogin',
       handler: 'api::profile.profile.testLogin',
       config: { auth: false }
+    },
+    {
+      method: 'GET',
+      path: '/profiles/pending-approvals',
+      handler: 'api::profile.profile.pendingApprovals',
+      config: { auth: false }
+    },
+    {
+      method: 'POST',
+      path: '/profiles/approve-memberships',
+      handler: 'api::profile.profile.approveMemberships',
+      config: { auth: false }
     }
   ]
 };

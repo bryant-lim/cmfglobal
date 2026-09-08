@@ -196,6 +196,13 @@ export default function TicketsPage() {
                                        <span className="text-lg font-black text-gray-900">
                                          {locale === 'cn' ? `CNY ${Number(tier.priceCny).toFixed(2)}` : `USD ${Number(tier.priceUsd).toFixed(2)}`}
                                        </span>
+                                       {tier.deadline && (
+                                         <span className="text-xs text-gray-500 font-semibold mt-0.5">
+                                           {isCn 
+                                             ? `截止日期: ${new Date(tier.deadline).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })}` 
+                                             : `Deadline: ${new Date(tier.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                                         </span>
+                                       )}
                                      </div>
                                   </div>
                                   

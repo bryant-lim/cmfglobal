@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { getMembershipByDocumentId, getPaymentSettings, getFullImageUrl } from '@/lib/api';
 import ImageCropper from './ImageCropper';
+import PhoneInputWithCountry from './PhoneInputWithCountry';
+import { COUNTRIES as COUNTRY_LIST } from '@/lib/country-data';
 
 const COUNTRIES = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
@@ -203,7 +205,17 @@ export default function MembershipEnrollmentForm() {
   }, [planDetails, settings, isCn]);
 
   const [portraitPhoto, setPortraitPhoto] = useState<Blob | null>(null);
+  const [portraitPhotoPreview, setPortraitPhotoPreview] = useState<string>('');
   const [incomeSlip, setIncomeSlip] = useState<File | null>(null);
+
+  // Clean up object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (portraitPhotoPreview && portraitPhotoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(portraitPhotoPreview);
+      }
+    };
+  }, [portraitPhotoPreview]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -223,14 +235,16 @@ export default function MembershipEnrollmentForm() {
 
   const validateStep = (s: number) => {
     if (s === 1) {
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.gender || !formData.tShirtSize) return false;
+      const hasPhone = formData.phone && /\d{5,}/.test(formData.phone);
+      if (!formData.firstName || !formData.lastName || !formData.email || !hasPhone || !formData.gender || !formData.tShirtSize) return false;
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
     }
     if (s === 2) {
-      return !!(formData.companyName && formData.designation && formData.passportNo && incomeSlip);
+      return !!(formData.companyName && formData.designation && formData.passportNo && formData.pastYearIncome && incomeSlip);
     }
     if (s === 3) {
-      return !!(formData.billingName && formData.billingEmail && formData.billingPhone && formData.billingAddress);
+      const hasBillingPhone = formData.billingPhone && /\d{5,}/.test(formData.billingPhone);
+      return !!(formData.billingName && formData.billingEmail && hasBillingPhone && formData.billingAddress);
     }
     return true;
   };
@@ -353,13 +367,36 @@ export default function MembershipEnrollmentForm() {
               </div>
            </div>
 
-           <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase text-gray-600 ml-1">{t('labels.phone')} *</label>
-              <div className="relative">
-                <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input name="phone" value={formData.phone} onChange={handleInputChange} className="w-full pl-12 pr-4 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.phone')} />
-              </div>
-           </div>
+           <SearchableSelect 
+             label={t('labels.country')} 
+             value={formData.country} 
+             onChange={(val: string) => {
+               setFormData(p => {
+                 const updated = { ...p, country: val };
+                 const matchedCountry = COUNTRY_LIST.find(c => c.name.toLowerCase() === val.toLowerCase());
+                 if (matchedCountry) {
+                   const sortedCountries = [...COUNTRY_LIST].sort((a, b) => b.dialCode.length - a.dialCode.length);
+                   const oldCountry = sortedCountries.find(c => p.phone.startsWith(c.dialCode));
+                   let rawPhone = p.phone;
+                   if (oldCountry) {
+                     rawPhone = p.phone.slice(oldCountry.dialCode.length);
+                   }
+                   updated.phone = matchedCountry.dialCode + rawPhone;
+                 }
+                 return updated;
+               });
+             }} 
+             icon={MapPin}
+             placeholder={t('labels.country')}
+           />
+
+           <PhoneInputWithCountry 
+              label={t('labels.phone')} 
+              value={formData.phone} 
+              onChange={(val) => setFormData(p => ({ ...p, phone: val }))}
+              required
+           />
+
 
            <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
@@ -393,13 +430,6 @@ export default function MembershipEnrollmentForm() {
                </div>
             </div>
 
-           <SearchableSelect 
-             label={t('labels.country')} 
-             value={formData.country} 
-             onChange={(val: string) => setFormData(p => ({ ...p, country: val }))} 
-             icon={MapPin}
-             placeholder={t('labels.country')}
-           />
         </div>
       )}
 
@@ -447,7 +477,23 @@ export default function MembershipEnrollmentForm() {
                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">3:4 Ratio Required</div>
               </div>
               <div className="relative">
-                <ImageCropper onCropComplete={(blob) => setPortraitPhoto(blob)} />
+                <ImageCropper 
+                  onCropComplete={(blob) => {
+                    setPortraitPhoto(blob);
+                    if (portraitPhotoPreview && portraitPhotoPreview.startsWith('blob:')) {
+                      URL.revokeObjectURL(portraitPhotoPreview);
+                    }
+                    setPortraitPhotoPreview(URL.createObjectURL(blob));
+                  }} 
+                  onClear={() => {
+                    setPortraitPhoto(null);
+                    if (portraitPhotoPreview && portraitPhotoPreview.startsWith('blob:')) {
+                      URL.revokeObjectURL(portraitPhotoPreview);
+                    }
+                    setPortraitPhotoPreview('');
+                  }}
+                  initialImage={portraitPhotoPreview}
+                />
               </div>
            </div>
 
@@ -500,30 +546,46 @@ export default function MembershipEnrollmentForm() {
                     <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Name *</label>
                     <input name="billingName" value={formData.billingName} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder="Full Name" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Email *</label>
-                       <input name="billingEmail" value={formData.billingEmail} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.email')} />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Phone *</label>
-                       <input name="billingPhone" value={formData.billingPhone} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.phone')} />
-                    </div>
-                 </div>
+                  <div className="space-y-2">
+                     <label className="text-[11px] font-black uppercase text-gray-600 ml-1">Billing Email *</label>
+                     <input name="billingEmail" value={formData.billingEmail} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('placeholders.email')} />
+                  </div>
+
+                  <SearchableSelect 
+                   label={t('labels.country')} 
+                   value={formData.billingCountry} 
+                   onChange={(val: string) => {
+                    setFormData(p => {
+                      const updated = { ...p, billingCountry: val };
+                      const matchedCountry = COUNTRY_LIST.find(c => c.name.toLowerCase() === val.toLowerCase());
+                      if (matchedCountry) {
+                        const sortedCountries = [...COUNTRY_LIST].sort((a, b) => b.dialCode.length - a.dialCode.length);
+                        const oldCountry = sortedCountries.find(c => p.billingPhone.startsWith(c.dialCode));
+                        let rawPhone = p.billingPhone;
+                        if (oldCountry) {
+                          rawPhone = p.billingPhone.slice(oldCountry.dialCode.length);
+                        }
+                        updated.billingPhone = matchedCountry.dialCode + rawPhone;
+                      }
+                      return updated;
+                    });
+                  }} 
+                   icon={MapPin}
+                   placeholder={t('labels.country')}
+                 />
+
+                  <PhoneInputWithCountry 
+                     label="Billing Phone" 
+                     value={formData.billingPhone} 
+                     onChange={(val) => setFormData(p => ({ ...p, billingPhone: val }))}
+                     required
+                  />
 
                  <div className="space-y-2">
                     <label className="text-[11px] font-black uppercase text-gray-600 ml-1">{t('labels.billingCompanyName')}</label>
                     <input name="billingCompanyName" value={formData.billingCompanyName} onChange={handleInputChange} className="w-full px-5 py-4 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-100 outline-none transition-all font-bold shadow-sm placeholder:text-gray-300" placeholder={t('labels.company')} />
                  </div>
                  
-                 <SearchableSelect 
-                   label={t('labels.country')} 
-                   value={formData.billingCountry} 
-                   onChange={(val: string) => setFormData(p => ({ ...p, billingCountry: val }))} 
-                   icon={MapPin}
-                   placeholder={t('labels.country')}
-                 />
-
                  <div className="space-y-2">
                     <label className="text-[11px] font-black uppercase text-gray-600 ml-1">{t('labels.billingAddress')} *</label>
                     <textarea 

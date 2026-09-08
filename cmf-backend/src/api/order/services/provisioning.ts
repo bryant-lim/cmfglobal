@@ -40,7 +40,14 @@ export default ({ strapi }) => ({
           return orderData;
         }
 
-        const enrollmentData = orderData.enrollmentData;
+        let enrollmentData = orderData.enrollmentData;
+        if (typeof enrollmentData === 'string') {
+          try {
+            enrollmentData = JSON.parse(enrollmentData);
+          } catch (e) {
+            console.error('❌ Failed to parse enrollmentData JSON:', e);
+          }
+        }
         const tempPassword = `CMF${Math.floor(10000000 + Math.random() * 89999999)}`;
         const cleanEmail = orderData.buyerEmail.toLowerCase().trim();
         
@@ -106,6 +113,7 @@ export default ({ strapi }) => ({
                 designation: enrollmentData.designation,
                 passportNo: enrollmentData.passportNo,
                 country: enrollmentData.country,
+                pastYearIncome: enrollmentData.pastYearIncome ? parseFloat(enrollmentData.pastYearIncome) : null,
                 billingName: orderData.buyerBillingAddress.name,
                 billingEmail: orderData.buyerBillingAddress.email,
                 billingPhone: orderData.buyerBillingAddress.phone,
@@ -132,6 +140,7 @@ export default ({ strapi }) => ({
                 designation: enrollmentData.designation,
                 passportNo: enrollmentData.passportNo,
                 country: enrollmentData.country,
+                pastYearIncome: enrollmentData.pastYearIncome ? parseFloat(enrollmentData.pastYearIncome) : null,
                 portraitPhoto: enrollmentData.portraitPhotoId,
                 incomeSlip: enrollmentData.incomeSlipId
               }
@@ -214,6 +223,80 @@ export default ({ strapi }) => ({
         }
       } else if (orderData.type === 'ticket') {
         console.log('🎫 Provisioning Tickets for Order:', orderId);
+        
+        // 🟢 NEW: Identity-Aware Provisioning for Ticket Buyers
+        const cleanEmail = orderData.buyerEmail.toLowerCase().trim();
+        const tempPassword = `CMF${Math.floor(10000000 + Math.random() * 89999999)}`;
+        
+        const roles = await strapi.db.query('plugin::users-permissions.role').findMany({
+          where: { type: 'authenticated' }
+        });
+        const roleId = roles[0]?.id || 1;
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+        let user: any = await strapi.query('plugin::users-permissions.user').findOne({
+          where: { email: cleanEmail }
+        });
+
+        let isNewUser = false;
+        if (!user) {
+          user = await strapi.query('plugin::users-permissions.user').create({
+            data: {
+              username: cleanEmail,
+              email: cleanEmail,
+              password: hashedPassword,
+              confirmed: true,
+              role: roleId,
+              mustChangePassword: true
+            }
+          });
+          isNewUser = true;
+          console.log('👤 New User Account Created for Ticket Buyer');
+        }
+
+        // 🔗 Link Order to User
+        if (user && !orderData.user) {
+          await strapi.documents('api::order.order').update({
+            documentId: orderData.documentId,
+            data: { user: user.id } as any
+          });
+          console.log('🔗 Ticket Order Linked to User Account');
+        }
+
+        if (user) {
+          // Ensure Profile Exists
+          let profile = await strapi.db.query('api::profile.profile').findOne({
+            where: { user: user.id }
+          });
+
+          if (!profile) {
+            profile = await strapi.db.query('api::profile.profile').create({
+              data: {
+                firstName: orderData.buyerFirstName,
+                lastName: orderData.buyerLastName,
+                email: cleanEmail,
+                phone: orderData.buyerPhone,
+                companyName: orderData.buyerCompanyName || 'Individual',
+                designation: 'Guest', // Placeholder
+                passportNo: `TBA-${Math.floor(1000 + Math.random() * 9000)}`, // Placeholder
+                country: 'TBA', // Placeholder
+                billingAddress: typeof orderData.buyerBillingAddress === 'string' 
+                  ? orderData.buyerBillingAddress 
+                  : (orderData.buyerBillingAddress?.address || ''),
+                user: user.id
+              }
+            });
+            console.log('👤 New Member Profile Created for Ticket Buyer');
+          }
+
+          // If new user, send welcome email with credentials
+          if (isNewUser) {
+            await strapi.service('api::order.notification').sendWelcomeEmail(cleanEmail, tempPassword, 'ticket');
+          }
+        }
+
         const { attendees, tierInfo } = orderData.enrollmentData;
         const eventId = orderData.event?.id;
         
@@ -241,6 +324,7 @@ export default ({ strapi }) => ({
              
              const newAttendee = await strapi.documents('api::attendee.attendee').create({
                data: {
+                 salutation: attendee.salutation || null,
                  firstName: attendee.firstName,
                  lastName: attendee.lastName,
                  email: attendee.email,
