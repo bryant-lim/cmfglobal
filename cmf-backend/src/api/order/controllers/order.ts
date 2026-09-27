@@ -250,6 +250,15 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       );
       if (!tier) return ctx.badRequest('Invalid ticket tier');
 
+      const now = new Date();
+      if (tier.startDateTime && now < new Date(tier.startDateTime)) {
+        return ctx.badRequest('This ticket tier is not yet active');
+      }
+      const tierEnd = tier.endDateTime || tier.deadline;
+      if (tierEnd && now > new Date(tierEnd)) {
+        return ctx.badRequest('This ticket tier has ended');
+      }
+
       let settings: any = { adminTaxPercentage: 0 };
       try {
         const settingsResults: any = await strapi.documents('api::payment-setting.payment-setting').findMany(); 

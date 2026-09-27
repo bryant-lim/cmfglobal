@@ -14,6 +14,8 @@ interface TicketTier {
   tierNameZh?: string;
   priceUsd: number;
   priceCny: number;
+  startDateTime?: string;
+  endDateTime?: string;
   deadline?: string;
 }
 
@@ -88,15 +90,20 @@ export default function TicketsPage() {
     return `${startStr} - ${endStr} • ${timeStr}`;
   };
 
-  const isPastDeadline = (deadline?: string) => {
-    if (!deadline) return false;
-    const today = new Date();
-    const d = new Date(deadline);
-    return today > d;
+  const isTierActive = (tier: TicketTier) => {
+    const now = new Date();
+    if (tier.startDateTime && now < new Date(tier.startDateTime)) {
+      return false;
+    }
+    const end = tier.endDateTime || tier.deadline;
+    if (end && now > new Date(end)) {
+      return false;
+    }
+    return true;
   };
 
   const handleSecureSeat = async (event: Event) => {
-    const activeTier = event.tiers.find(t => (quantities[`${event.id}-${t.tierName}`] || 0) > 0);
+    const activeTier = event.tiers?.filter(isTierActive).find(t => (quantities[`${event.id}-${t.tierName}`] || 0) > 0);
     const qty = activeTier ? quantities[`${event.id}-${activeTier.tierName}`] : 0;
 
     if (!activeTier || qty === 0) {
@@ -180,13 +187,13 @@ export default function TicketsPage() {
                       <h4 className="text-[13px] font-black uppercase tracking-widest text-gray-400 mb-8">{t('selectTickets')}</h4>
                       
                       <div className="space-y-4 flex-1 mb-10">
-                        {event.tiers?.map((tier, i) => {
-                          const disabled = isPastDeadline(tier.deadline);
+                        {event.tiers?.filter(isTierActive).map((tier, i) => {
+                          const endDate = tier.endDateTime || tier.deadline;
                           const qtyKey = `${event.id}-${tier.tierName || i}`;
                           const qty = quantities[qtyKey] || 0;
                           
                           return (
-                            <div key={qtyKey} className={`p-6 rounded-2xl border transition-all ${disabled ? 'bg-gray-100 opacity-60 border-transparent grayscale pointer-events-none' : 'bg-white border-gray-100 shadow-sm'}`}>
+                            <div key={qtyKey} className="p-6 rounded-2xl border transition-all bg-white border-gray-100 shadow-sm">
                                <div className="flex justify-between items-center mb-0">
                                   <div className="flex-1 mr-4">
                                     <div className="text-base font-bold text-gray-900 mb-2">
@@ -196,45 +203,35 @@ export default function TicketsPage() {
                                        <span className="text-lg font-black text-gray-900">
                                          {locale === 'cn' ? `CNY ${Number(tier.priceCny).toFixed(2)}` : `USD ${Number(tier.priceUsd).toFixed(2)}`}
                                        </span>
-                                       {tier.deadline && (
+                                       {endDate && (
                                          <span className="text-xs text-gray-500 font-semibold mt-0.5">
                                            {isCn 
-                                             ? `截止日期: ${new Date(tier.deadline).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })}` 
-                                             : `Deadline: ${new Date(tier.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                                             ? `截止日期: ${new Date(endDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })}` 
+                                             : `Deadline: ${new Date(endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                                          </span>
                                        )}
                                      </div>
                                   </div>
                                   
-                                  {!disabled && (
-                                    <div className="flex items-center space-x-3 bg-gray-50 rounded-xl p-1.5 border border-gray-100">
-                                       <button 
-                                        type="button"
-                                        disabled={qty === 0}
-                                        onClick={() => handleQuantityChange(event.id, tier.tierName, -1)}
-                                        className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 disabled:opacity-30 transition-all border border-transparent hover:border-gray-200"
-                                       >
-                                         -
-                                       </button>
-                                       <span className="text-xs font-black min-w-[24px] text-center">{qty}</span>
-                                       <button 
-                                        type="button"
-                                        onClick={() => handleQuantityChange(event.id, tier.tierName, 1)}
-                                        className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all border border-transparent hover:border-gray-200"
-                                       >
-                                         +
-                                       </button>
-                                    </div>
-                                  )}
+                                  <div className="flex items-center space-x-3 bg-gray-50 rounded-xl p-1.5 border border-gray-100">
+                                     <button 
+                                      type="button"
+                                      disabled={qty === 0}
+                                      onClick={() => handleQuantityChange(event.id, tier.tierName, -1)}
+                                      className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 disabled:opacity-30 transition-all border border-transparent hover:border-gray-200"
+                                     >
+                                       -
+                                     </button>
+                                     <span className="text-xs font-black min-w-[24px] text-center">{qty}</span>
+                                     <button 
+                                      type="button"
+                                      onClick={() => handleQuantityChange(event.id, tier.tierName, 1)}
+                                      className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all border border-transparent hover:border-gray-200"
+                                     >
+                                       +
+                                     </button>
+                                  </div>
                                </div>
-                               {disabled && (
-                                 <div className="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-widest italic">
-                                   {tier.deadline ? 
-                                     tTickets('promotionEnded', { date: new Date(tier.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }) : 
-                                     'Sold Out / Ended'
-                                   }
-                                 </div>
-                               )}
                             </div>
                           );
                         })}

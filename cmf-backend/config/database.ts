@@ -1,5 +1,12 @@
 import path from 'path';
+import dns from 'dns';
 import type { Core } from '@strapi/strapi';
+
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {
+  // Ignore on older Node versions where this method is not available
+}
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Database => {
   const client = env('DATABASE_CLIENT', 'sqlite');

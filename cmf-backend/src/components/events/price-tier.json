@@ -32,9 +32,27 @@
         }
       }
     },
+    "startDateTime": {
+      "type": "datetime",
+      "required": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "endDateTime": {
+      "type": "datetime",
+      "required": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
     "deadline": {
       "type": "datetime",
-      "required": true,
+      "required": false,
       "pluginOptions": {
         "i18n": {
           "localized": false

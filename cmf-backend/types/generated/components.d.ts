@@ -8,7 +8,12 @@ export interface EventsPriceTier extends Struct.ComponentSchema {
   };
   attributes: {
     deadline: Schema.Attribute.DateTime &
-      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    endDateTime: Schema.Attribute.DateTime &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: false;
@@ -23,6 +28,12 @@ export interface EventsPriceTier extends Struct.ComponentSchema {
       }>;
     priceUsd: Schema.Attribute.Decimal &
       Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    startDateTime: Schema.Attribute.DateTime &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: false;
